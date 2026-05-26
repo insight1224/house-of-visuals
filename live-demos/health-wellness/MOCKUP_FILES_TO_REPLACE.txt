@@ -1,0 +1,63 @@
+HEALTH & WELLNESS DEMO MOCKUP REPLACEMENT LIST
+Path: /Users/a.hicks/Documents/New project/House of Visuals/live-demos/health-wellness
+
+Use these exact filenames when you export/save mockups.
+If the filename matches exactly, the page and captions will line up automatically.
+
+1) hero-desktop-homepage.png
+   Description: Full desktop homepage hero (nav + headline + CTA + calming wellness visual)
+
+2) hero-mobile-homepage.png
+   Description: Mobile homepage hero view
+
+3) about-page.png
+   Description: About / mission / provider trust section
+
+4) services-page.png
+   Description: Services grid (consultations, coaching, plans, support programs)
+
+5) pricing-packages-page.png
+   Description: Wellness plans / package tiers section
+
+6) before-after-section.png
+   Description: Client progress or wellness transformation showcase
+
+7) reviews-section.png
+   Description: Client testimonials and trust section
+
+8) booking-page-form.png
+   Description: Consultation booking / intake form page
+
+9) booking-confirmation-flow.png
+   Description: Post-submit confirmation state for consultation requests
+
+10) dashboard-overview.png
+    Description: Provider dashboard overview with appointments and client KPIs
+
+11) dashboard-pipeline.png
+    Description: Client journey pipeline (Inquiry -> Intake -> Consult -> Plan -> Follow-Up)
+
+12) dashboard-schedule.png
+    Description: Appointment calendar / daily schedule view
+
+13) dashboard-client-notes.png
+    Description: Client notes and follow-up tasks panel
+
+14) dashboard-invoices.png
+    Description: Invoices, payments, and billing tracking panel
+
+15) mobile-website-services-trust-cta.png
+    Description: Mobile website view with services + trust + CTA
+
+16) mobile-lead-form.png
+    Description: Mobile consultation/intake lead form flow
+
+17) mobile-dashboard.png
+    Description: Mobile provider dashboard overview
+
+18) mobile-booking-flow.png
+    Description: Mobile booking and intake flow preview
+
+Tip:
+- Keep image dimensions consistent within desktop and mobile groups for the cleanest carousel look.
+- After replacing files, hard refresh browser: Cmd+Shift+R

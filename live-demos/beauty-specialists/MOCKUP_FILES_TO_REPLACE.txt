@@ -1,0 +1,61 @@
+BEAUTY SPECIALISTS DEMO MOCKUP REPLACEMENT LIST
+Path: /Users/a.hicks/Documents/New project/House of Visuals/live-demos/beauty-specialists
+
+Use these exact filenames when replacing mockups:
+
+1) hero-desktop-homepage.png
+   Full desktop homepage hero and main website preview
+
+2) hero-mobile-homepage.png
+   Mobile homepage preview
+
+3) about-page.png
+   About/results/trust section
+
+4) services-page.png
+   Beauty services grid
+
+5) pricing-packages-page.png
+   Pricing and service packages
+
+6) before-after-section.png
+   Transformations / before-and-after gallery
+
+7) reviews-section.png
+   Client reviews and testimonials
+
+8) booking-page-form.png
+   Booking page / appointment form
+
+9) booking-confirmation-flow.png
+   Booking confirmation / success state
+
+10) dashboard-overview.png
+    Business dashboard overview
+
+11) dashboard-pipeline.png
+    Client profile / booking pipeline view
+
+12) dashboard-schedule.png
+    Calendar and schedule dashboard
+
+13) dashboard-client-notes.png
+    Client notes and preferences dashboard
+
+14) dashboard-invoices.png
+    Payments and invoices dashboard
+
+15) mobile-website-services-trust-cta.png
+    Mobile website preview
+
+16) mobile-lead-form.png
+    Mobile booking / lead flow
+
+17) mobile-dashboard.png
+    Mobile business dashboard
+
+18) mobile-booking-flow.png
+    Mobile homepage or alternate booking preview
+
+Root thumbnail:
+beauty-specialists-demo-thumbnail.png

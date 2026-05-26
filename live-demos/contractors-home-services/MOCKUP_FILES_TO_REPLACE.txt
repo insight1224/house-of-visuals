@@ -1,0 +1,26 @@
+Contractor Demo - Exact Replacement List
+(keep these exact filenames)
+
+MAIN CAROUSEL ORDER (matches on-page captions)
+1) hero-desktop-homepage.png
+2) about-page.png
+3) services-page.png
+4) pricing-packages-page.png
+5) before-after-section.png
+6) reviews-section.png
+7) booking-page-form.png
+8) booking-confirmation-flow.png
+9) dashboard-overview.png
+10) dashboard-pipeline.png
+11) dashboard-schedule.png
+12) dashboard-client-notes.png
+13) dashboard-invoices.png
+
+MOBILE / SUPPORT MOCKUPS (used elsewhere on the page)
+14) hero-mobile-homepage.png
+15) mobile-website-services-trust-cta.png
+16) mobile-lead-form.png
+17) mobile-dashboard.png
+18) mobile-booking-flow.png
+
+Tip: After replacing files, hard refresh (Cmd+Shift+R).

@@ -1,0 +1,22 @@
+Replace these files with your real mockups (keep exact filenames):
+
+1) hero-desktop-homepage.png
+2) hero-mobile-homepage.png
+3) about-page.png
+4) services-page.png
+5) pricing-packages-page.png
+6) before-after-section.png
+7) reviews-section.png
+8) booking-page-form.png
+9) booking-confirmation-flow.png
+10) dashboard-overview.png
+11) dashboard-pipeline.png
+12) dashboard-schedule.png
+13) dashboard-client-notes.png
+14) dashboard-invoices.png
+15) mobile-website-services-trust-cta.png
+16) mobile-lead-form.png
+17) mobile-dashboard.png
+18) mobile-booking-flow.png
+
+Tip: After replacing files, hard refresh the browser (Cmd+Shift+R).

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>House of Visuals | Submit a Testimonial</title>
+    <meta name="description" content="Share your House of Visuals experience for manual review and approval." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="services-page contact-page testimonial-page">
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="./index.html"><span class="brand-top">House of Visuals</span><span class="brand-bottom">Creative Agency</span></a>
+        <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">Menu</button>
+        <nav class="nav" id="siteNav">
+          <a href="./index.html">Home</a>
+          <a href="./services.html">Services</a>
+          <a href="./our-work.html">Our Work</a>
+          <a href="./live-demos.html">Live Demos</a>
+          <a href="./contact.html">Contact</a>
+          <a class="btn btn-gold" href="./contact.html">Let's Chat</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="section-pad page-hero">
+        <div class="container reveal">
+          <p class="kicker">Submit a Testimonial</p>
+          <h1>Share Your House of Visuals Experience.</h1>
+          <p>Your feedback helps us understand what worked well and gives future clients a clearer picture of the experience. Testimonials are reviewed manually before anything is featured publicly.</p>
+        </div>
+      </section>
+
+      <section class="section-pad" id="submit-testimonial">
+        <div class="container">
+          <h2 class="section-title reveal">Submit a Testimonial</h2>
+          <p class="work-subhead reveal">Tell us what we helped with, how the experience felt, and what changed for your business.</p>
+          <div class="gold-line"></div>
+          <div class="contact-grid contact-intake-grid">
+            <form class="consult-form reveal contact-intake-form testimonial-form" id="testimonialForm">
+              <label>Full Name
+                <input type="text" name="full_name" required />
+              </label>
+              <label>Business Name
+                <input type="text" name="business_name" required />
+              </label>
+              <label class="field-span-full">Service Received
+                <input type="text" name="service_received" placeholder="Website, branding, content, dashboard, etc." required />
+              </label>
+              <fieldset class="field-span-full testimonial-rating-field">
+                <legend>Star Rating</legend>
+                <div class="testimonial-rating" aria-label="Star rating from 1 to 5">
+                  <label><input type="radio" name="star_rating" value="1" required /> <span>1 Star</span></label>
+                  <label><input type="radio" name="star_rating" value="2" /> <span>2 Stars</span></label>
+                  <label><input type="radio" name="star_rating" value="3" /> <span>3 Stars</span></label>
+                  <label><input type="radio" name="star_rating" value="4" /> <span>4 Stars</span></label>
+                  <label><input type="radio" name="star_rating" value="5" /> <span>5 Stars</span></label>
+                </div>
+              </fieldset>
+              <label class="field-span-full">Testimonial Message
+                <textarea name="testimonial_message" rows="6" placeholder="Share your experience working with House of Visuals." required></textarea>
+              </label>
+              <label class="field-span-full">Website or Social Link <small>Optional</small>
+                <input type="url" name="website_social_link" placeholder="https://yourwebsite.com or social profile link" />
+              </label>
+              <fieldset class="field-span-full checkbox-fieldset testimonial-permission-field">
+                <legend>Permission</legend>
+                <div class="checkbox-grid single">
+                  <label><input type="checkbox" name="permission" value="Yes, House of Visuals may feature my testimonial on the website, portfolio, and social media." required /> Yes, House of Visuals may feature my testimonial on the website, portfolio, and social media.</label>
+                </div>
+              </fieldset>
+              <p class="form-guidance field-span-full">Submitting this form does not automatically publish your testimonial. House of Visuals will review and approve testimonials manually before adding them publicly.</p>
+              <button type="submit" class="btn btn-green">Submit Testimonial</button>
+              <p class="form-success" id="testimonialSuccess" hidden>Thank you for sharing your experience. We’ll review your testimonial before publishing.</p>
+            </form>
+
+            <aside class="feature-card reveal contact-info-card">
+              <p class="kicker">Manual Review</p>
+              <h3>Shared with care.</h3>
+              <ul>
+                <li>Your testimonial is sent privately for review</li>
+                <li>Nothing is posted automatically</li>
+                <li>Approved quotes may support the website, portfolio, and social media</li>
+              </ul>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer"><div class="container footer-grid"><div><h3>House of Visuals Creative Agency</h3><p>Your Vision. Our Creativity. Real Results.</p></div><div><h4>Quick Links</h4><a href="./index.html">Home</a><a href="./services.html">Services</a><a href="./our-work.html">Our Work</a><a href="./live-demos.html">Live Demos</a><a href="./contact.html">Contact</a><a href="./testimonial.html">Submit a Testimonial</a></div><div><h4>Services</h4><p>Websites</p><p>Branding</p><p>Content</p><p>Marketing</p></div><div><h4>Contact</h4><p>hello@houseofvisualsco.com</p><p>houseofvisualsco.com</p><p><a href="https://www.facebook.com/share/1TvnxaVPSy/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer">Facebook</a></p></div></div></footer>
+    <script src="./script.js"></script>
+  </body>
+</html>

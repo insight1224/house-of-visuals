@@ -1,0 +1,47 @@
+CONTENT DEMO IMAGE MAP
+Path: /Users/a.hicks/Documents/New project/House of Visuals/live-demos/content
+
+Images currently used on the page:
+
+1) brand-campaigns.jpeg
+   Caption: Multi-platform campaign board showing social posts, service promos, and brand storytelling assets.
+
+2) photo-video-direction.jpeg
+   Caption: Beauty and wellness content system with website, social, offer, and campaign visuals.
+
+3) short-form-video.png
+   Caption: Personal-brand content direction for speaking clips, event promos, and authority-building posts.
+
+4) social-graphics.png
+   Caption: Service business promo graphics built for offers, trust proof, and local conversion.
+
+5) cleaning-content.png
+   Caption: Home service promo content with offer messaging, QR action, and branded trust cues.
+
+6) beauty-content.png
+   Caption: Beauty promo content for seasonal offers, service education, and client-facing campaigns.
+
+7) realtor-content.png
+   Caption: Real estate content for listings, open houses, personal brand positioning, and lead capture.
+
+8) local-service-content.png
+   Caption: Trade and service brand content with offer highlights, credibility, and conversion-focused design.
+
+9) barber-content.png
+   Caption: Barbershop content designed for service menus, offers, and neighborhood brand energy.
+
+10) personal-brand-content.png
+    Caption: Personal-service content for speaker brands, expert positioning, and event-ready promotion.
+
+11) service-promo-content.jpeg
+    Caption: Offer-led flyer content with a clear service promise, price cue, and direct call to action.
+
+12) barber-brand-content.jpeg
+    Caption: Full brand content board showing how a local service can carry one visual system across channels.
+
+Root thumbnail:
+- /Users/a.hicks/Documents/New project/House of Visuals/content-demo-thumbnail.png
+
+Recommended sizes:
+- Wide campaign boards: 1672x941 or 1536x1024.
+- Vertical content examples: 941x1672 or 1024x1536.

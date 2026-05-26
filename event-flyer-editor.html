@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>House of Visuals | Event Flyer Demo Editor</title>
+    <meta name="description" content="Guided demo editor for House of Visuals Event Flyer Kits." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="services-page templates-page flyer-editor-page">
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="./index.html"><span class="brand-top">House of Visuals</span><span class="brand-bottom">Creative Agency</span></a>
+        <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">Menu</button>
+        <nav class="nav" id="siteNav">
+          <a href="./index.html">Home</a>
+          <a href="./services.html">Services</a>
+          <a href="./our-work.html">Our Work</a>
+          <a href="./contact.html">Contact</a>
+          <a class="btn btn-gold" href="./contact.html">Let's Chat</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="section-pad page-hero">
+        <div class="container reveal">
+          <p class="kicker">Guided Demo Editor</p>
+          <h1 id="editorTitle">Event Flyer Kit Demo</h1>
+          <p>Customize approved fields, preview your flyer, and choose DIY purchase or Done For You setup.</p>
+        </div>
+      </section>
+
+      <section class="section-pad flyer-editor-section">
+        <div class="container">
+          <div class="flyer-editor-grid">
+            <aside class="flyer-editor-panel left-controls reveal">
+              <h3>Content Controls</h3>
+              <label>Presenter / Brand Name <input type="text" id="fBrand" /></label>
+              <label>Event Title <input type="text" id="fTitle" /></label>
+              <label>Subtitle <input type="text" id="fSubtitle" /></label>
+              <label>Date <input type="text" id="fDate" /></label>
+              <label>Time <input type="text" id="fTime" /></label>
+              <label>Venue Name <input type="text" id="fVenue" /></label>
+              <label>Venue Address <input type="text" id="fAddress" /></label>
+              <label>CTA Text <input type="text" id="fCta" /></label>
+              <label>Footer Text <input type="text" id="fFooter" /></label>
+
+              <h4>Color Controls</h4>
+              <label>Accent Color <input type="color" id="fAccent" value="#c9a24f" /></label>
+              <label>Background Overlay <input type="color" id="fBg" value="#111111" /></label>
+              <label>Text Color <input type="color" id="fTextColor" value="#ffffff" /></label>
+
+              <h4>Images</h4>
+              <label>Upload Background Image <input type="file" id="fBgUpload" accept="image/*" /></label>
+              <label>Upload Logo <input type="file" id="fLogoUpload" accept="image/*" /></label>
+
+              <h4>Style</h4>
+              <label>Font Style
+                <select id="fFont">
+                  <option value="Cinzel, serif">Luxury Serif</option>
+                  <option value="Manrope, sans-serif">Modern Sans</option>
+                  <option value="'Arial', sans-serif">Classic</option>
+                </select>
+              </label>
+              <label><input type="checkbox" id="fGlow" /> Glow Effect</label>
+              <label><input type="checkbox" id="fShadow" /> Shadow</label>
+              <label><input type="checkbox" id="fBorder" /> Border Style</label>
+            </aside>
+
+            <div class="flyer-canvas-wrap reveal">
+              <div class="flyer-canvas" id="flyerCanvas">
+                <div class="demo-watermark" aria-hidden="true"></div>
+                <div class="flyer-logo" id="flyerLogo">Upload Logo</div>
+                <div class="flyer-brand" id="flyerBrand">House of Visuals Presents</div>
+                <div class="flyer-title" id="flyerTitle">Network &amp; Connect</div>
+                <div class="flyer-subtitle" id="flyerSubtitle">Build meaningful connections in a premium event setting.</div>
+                <div class="flyer-meta">
+                  <div id="flyerDate">Saturday, June 20</div>
+                  <div id="flyerTime">7:00 PM - 10:00 PM</div>
+                </div>
+                <div class="flyer-venue" id="flyerVenue">Capital Lounge Ballroom</div>
+                <div class="flyer-address" id="flyerAddress">3117 Capital Blvd, Raleigh, NC</div>
+                <div class="flyer-cta" id="flyerCta">Reserve Your Spot</div>
+                <div class="flyer-footer" id="flyerFooter">Demo previews include a watermark. Purchase for full access.</div>
+              </div>
+              <p class="editor-note">Demo previews include a watermark. Purchase the DIY template for full access.</p>
+            </div>
+
+            <aside class="flyer-editor-panel right-actions reveal">
+              <h3>Preview & Actions</h3>
+              <button class="btn btn-outline" type="button" id="openFlyerPreview">Flyer Preview</button>
+              <button class="btn btn-outline" type="button" id="toggleMobilePreview">Mobile Preview</button>
+              <button class="btn btn-outline" type="button" id="resetFlyerDemo">Reset Demo</button>
+              <a class="btn btn-green" id="buyFlyerTemplate" href="./template-checkout.html">Buy DIY Template</a>
+              <a class="btn btn-outline" href="./contact.html">Done For You Setup</a>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="flyer-preview-modal" id="flyerPreviewModal" aria-hidden="true">
+        <div class="flyer-preview-shell">
+          <button class="template-demo-close" id="closeFlyerPreview" aria-label="Close flyer preview">×</button>
+          <div class="flyer-preview-canvas" id="flyerPreviewCanvas"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer"><div class="container footer-grid"><div><h3>House of Visuals Creative Agency</h3><p>Your Vision. Our Creativity. Real Results.</p></div><div><h4>Quick Links</h4><a href="./index.html">Home</a><a href="./services.html">Services</a><a href="./our-work.html">Our Work</a><a href="./contact.html">Contact</a><a href="./testimonial.html">Submit a Testimonial</a></div><div><h4>Services</h4><p>Websites</p><p>Branding</p><p>Content</p><p>Marketing</p></div><div><h4>Contact</h4><p>hello@houseofvisualsco.com</p><p>houseofvisualsco.com</p><p><a href="https://www.facebook.com/share/1TvnxaVPSy/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer">Facebook</a></p></div></div></footer>
+
+    <script src="./script.js"></script>
+    <script src="./event-flyer-editor.js"></script>
+  </body>
+</html>

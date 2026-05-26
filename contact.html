@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>House of Visuals | Contact</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="services-page contact-page">
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="./index.html"><span class="brand-top">House of Visuals</span><span class="brand-bottom">Creative Agency</span></a>
+        <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">Menu</button>
+        <nav class="nav" id="siteNav">
+          <a href="./index.html">Home</a>
+          <a href="./services.html">Services</a>
+          <a href="./our-work.html">Our Work</a>
+          <a href="./live-demos.html">Live Demos</a>
+          <a class="active" href="./contact.html">Contact</a>
+          <a class="btn btn-gold" href="./contact.html">Let's Chat</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="section-pad page-hero">
+        <div class="container reveal">
+          <p class="kicker">Contact</p>
+          <h1>Let’s Build Something That Stands Out.</h1>
+          <p>Tell us about your vision, your goals, and what you need help creating. House of Visuals builds websites, branding, content, templates, dashboards, and creative systems designed to help businesses look professional and grow online.</p>
+        </div>
+      </section>
+
+      <section class="section-pad" id="consultation">
+        <div class="container">
+          <h2 class="section-title reveal">Tell Us About Your Project</h2>
+          <p class="work-subhead reveal">Share a little about your business, your goals, and the creative support you need. We’ll use this information to guide you toward the best solution.</p>
+          <div class="gold-line"></div>
+          <div class="contact-grid contact-intake-grid">
+            <form class="consult-form reveal contact-intake-form" id="contactForm">
+              <h3 class="form-section-title">Section 1: Contact Info</h3>
+              <label>Full Name
+                <input type="text" name="full_name" required />
+              </label>
+              <label>Business Name
+                <input type="text" name="business_name" />
+              </label>
+              <label>Email Address
+                <input type="email" name="email" required />
+              </label>
+              <label>Phone Number
+                <input type="tel" name="phone" />
+              </label>
+              <label class="field-span-full">Website or Social Media Links
+                <input type="text" name="website_social_links" placeholder="https://yourwebsite.com, Instagram, TikTok, etc." />
+              </label>
+
+              <h3 class="form-section-title">Section 2: Project Type</h3>
+              <fieldset class="field-span-full checkbox-fieldset">
+                <legend>What are you interested in?</legend>
+                <div class="checkbox-grid">
+                  <label><input type="checkbox" name="project_type[]" value="Website Design" /> Website Design</label>
+                  <label><input type="checkbox" name="project_type[]" value="Branding" /> Branding</label>
+                  <label><input type="checkbox" name="project_type[]" value="Content Creation" /> Content Creation</label>
+                  <label><input type="checkbox" name="project_type[]" value="Social Media Graphics" /> Social Media Graphics</label>
+                  <label><input type="checkbox" name="project_type[]" value="Event Flyer / Promo" /> Event Flyer / Promo</label>
+                  <label><input type="checkbox" name="project_type[]" value="DIY Content Kits" /> DIY Content Kits</label>
+                  <label><input type="checkbox" name="project_type[]" value="Dashboard / Business System" /> Dashboard / Business System</label>
+                  <label><input type="checkbox" name="project_type[]" value="Rebranding" /> Rebranding</label>
+                  <label><input type="checkbox" name="project_type[]" value="Not Sure Yet" /> Not Sure Yet</label>
+                </div>
+              </fieldset>
+
+              <h3 class="form-section-title">Section 3: About the Business</h3>
+              <label class="field-span-full">Tell us about your business
+                <textarea name="business_overview" rows="3"></textarea>
+              </label>
+              <label class="field-span-full">What do you sell or offer?
+                <textarea name="offerings" rows="3"></textarea>
+              </label>
+              <label class="field-span-full">Who is your target audience?
+                <textarea name="target_audience" rows="3"></textarea>
+              </label>
+              <label class="field-span-full">What makes your business unique?
+                <textarea name="unique_value" rows="3"></textarea>
+              </label>
+
+              <h3 class="form-section-title">Section 4: Project Goals</h3>
+              <fieldset class="field-span-full checkbox-fieldset">
+                <legend>What are you hoping this project helps you achieve?</legend>
+                <div class="checkbox-grid">
+                  <label><input type="checkbox" name="project_goal[]" value="Look more professional" /> Look more professional</label>
+                  <label><input type="checkbox" name="project_goal[]" value="Get more customers" /> Get more customers</label>
+                  <label><input type="checkbox" name="project_goal[]" value="Increase bookings" /> Increase bookings</label>
+                  <label><input type="checkbox" name="project_goal[]" value="Promote an event" /> Promote an event</label>
+                  <label><input type="checkbox" name="project_goal[]" value="Improve branding" /> Improve branding</label>
+                  <label><input type="checkbox" name="project_goal[]" value="Increase engagement" /> Increase engagement</label>
+                  <label><input type="checkbox" name="project_goal[]" value="Launch a new business" /> Launch a new business</label>
+                  <label><input type="checkbox" name="project_goal[]" value="Build trust online" /> Build trust online</label>
+                  <label><input type="checkbox" name="project_goal[]" value="Create consistency" /> Create consistency</label>
+                  <label><input type="checkbox" name="project_goal[]" value="Other" /> Other</label>
+                </div>
+              </fieldset>
+
+              <h3 class="form-section-title">Section 5: Style / Vision</h3>
+              <label class="field-span-full">Describe the vibe/style you want
+                <textarea name="style_vibe" rows="3"></textarea>
+              </label>
+              <label>Any colors you love?
+                <input type="text" name="colors" placeholder="Forest green, gold, cream, etc." />
+              </label>
+              <label>Any brands, websites, or pages you like?
+                <input type="text" name="references" placeholder="Share links or brand names" />
+              </label>
+              <label class="field-span-full">Is there a demo/template on our site you’re inspired by? (optional)
+                <input type="text" name="inspired_demo" placeholder="Example: Event Flyer Kits - Network & Connect, Bold Moves concept, Luxe Lane layout, etc." />
+              </label>
+
+              <h3 class="form-section-title">Section 6: Content &amp; Assets</h3>
+              <fieldset class="checkbox-fieldset">
+                <legend>What do you already have?</legend>
+                <div class="checkbox-grid">
+                  <label><input type="checkbox" name="existing_assets[]" value="Logo" /> Logo</label>
+                  <label><input type="checkbox" name="existing_assets[]" value="Brand Colors" /> Brand Colors</label>
+                  <label><input type="checkbox" name="existing_assets[]" value="Photos" /> Photos</label>
+                  <label><input type="checkbox" name="existing_assets[]" value="Videos" /> Videos</label>
+                  <label><input type="checkbox" name="existing_assets[]" value="Written Content" /> Written Content</label>
+                  <label><input type="checkbox" name="existing_assets[]" value="Social Media Pages" /> Social Media Pages</label>
+                  <label><input type="checkbox" name="existing_assets[]" value="Existing Website" /> Existing Website</label>
+                  <label><input type="checkbox" name="existing_assets[]" value="None Yet" /> None Yet</label>
+                  <label><input type="checkbox" name="existing_assets[]" value="Not Sure" /> Not Sure</label>
+                </div>
+              </fieldset>
+              <h3 class="form-section-title">Section 7: Timeline</h3>
+              <label>When are you hoping to launch?
+                <select name="timeline" required>
+                  <option>ASAP</option>
+                  <option>1–2 Weeks</option>
+                  <option>1 Month</option>
+                  <option>2–3 Months</option>
+                  <option>Flexible</option>
+                </select>
+              </label>
+
+              <h3 class="form-section-title">Section 8: Budget</h3>
+              <label>Which investment range best fits your project?
+                <select name="budget" required>
+                  <option>Under $500</option>
+                  <option>$500–$1,000</option>
+                  <option>$1,000–$2,500</option>
+                  <option>$2,500+</option>
+                  <option>Not Sure Yet</option>
+                </select>
+              </label>
+
+              <h3 class="form-section-title">Section 9: Final Details</h3>
+              <label class="field-span-full">Anything else we should know?
+                <textarea name="final_notes" rows="4"></textarea>
+              </label>
+              <label>How did you hear about us?
+                <select name="referral_source" id="referralSource" required>
+                  <option>Instagram</option>
+                  <option>Facebook</option>
+                  <option>TikTok</option>
+                  <option>Google</option>
+                  <option>Referral</option>
+                  <option>Upwork</option>
+                  <option>Existing Client</option>
+                  <option>Other</option>
+                </select>
+              </label>
+              <label id="referralNameWrap" hidden>Who referred you?
+                <input type="text" name="referral_name" id="referralName" placeholder="Referral name or business" />
+              </label>
+              <p class="form-guidance field-span-full">Not sure exactly what you need yet? That’s okay. House of Visuals can help guide you toward the best creative solution for your business.</p>
+              <button type="submit" class="btn btn-green">Submit Inquiry</button>
+              <p class="form-note">Custom pricing is based on project goals, creative direction, features, and timeline.</p>
+              <p class="form-success" id="formSuccess" hidden>Thank you! Your inquiry has been received. We’ll review your details and follow up soon.</p>
+            </form>
+
+            <aside class="feature-card reveal contact-info-card">
+              <p class="kicker">House of Visuals</p>
+              <h3>Websites. Branding. Content. Strategy.</h3>
+              <ul>
+                <li>Personalized communication</li>
+                <li>Strategy + design together</li>
+                <li>Built for businesses ready to grow</li>
+              </ul>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="site-footer"><div class="container footer-grid"><div><h3>House of Visuals Creative Agency</h3><p>Your Vision. Our Creativity. Real Results.</p></div><div><h4>Quick Links</h4><a href="./index.html">Home</a><a href="./services.html">Services</a><a href="./our-work.html">Our Work</a><a href="./live-demos.html">Live Demos</a><a href="./contact.html">Contact</a><a href="./testimonial.html">Submit a Testimonial</a></div><div><h4>Services</h4><p>Websites</p><p>Branding</p><p>Content</p><p>Marketing</p></div><div><h4>Contact</h4><p>hello@houseofvisualsco.com</p><p>houseofvisualsco.com</p><p><a href="https://www.facebook.com/share/1TvnxaVPSy/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer">Facebook</a></p></div></div></footer>
+    <script src="./script.js"></script>
+  </body>
+</html>

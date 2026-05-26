@@ -1,0 +1,44 @@
+Beauty & Wellness Demo - Exact Replacement List
+(keep these exact filenames)
+
+MAIN CAROUSEL ORDER (matches on-page captions)
+1) hero-desktop-homepage.png
+   - Desktop homepage hero for Luxe Glow Studio
+2) about-page.png
+   - About / Why Choose Us section
+3) services-page.png
+   - Services grid/cards
+4) pricing-packages-page.png
+   - Memberships / package pricing section
+5) before-after-section.png
+   - Transformation results (before/after style section)
+6) reviews-section.png
+   - Testimonials and social proof
+7) booking-page-form.png
+   - Appointment booking form page
+8) booking-confirmation-flow.png
+   - Post-submit confirmation / success screen
+9) dashboard-overview.png
+   - Dashboard home with top stats and snapshots
+10) dashboard-pipeline.png
+   - Appointment/client pipeline board
+11) dashboard-schedule.png
+   - Schedule calendar / upcoming appointments
+12) dashboard-client-notes.png
+   - Client notes and follow-up tracker
+13) dashboard-invoices.png
+   - Invoices / payments tracking
+
+MOBILE / SUPPORT MOCKUPS (used elsewhere on the page)
+14) hero-mobile-homepage.png
+   - Mobile homepage view
+15) mobile-website-services-trust-cta.png
+   - Mobile services + trust + CTA view
+16) mobile-lead-form.png
+   - Mobile quick lead/intake form flow
+17) mobile-dashboard.png
+   - Mobile dashboard overview
+18) mobile-booking-flow.png
+   - Mobile booking step flow
+
+Tip: After replacing files, hard refresh (Cmd+Shift+R).

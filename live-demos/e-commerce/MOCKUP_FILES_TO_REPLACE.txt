@@ -1,0 +1,63 @@
+E-COMMERCE DEMO MOCKUP REPLACEMENT LIST
+Path: /Users/a.hicks/Documents/New project/House of Visuals/live-demos/e-commerce
+
+Use these exact filenames when you export/save mockups.
+If the filename matches exactly, the page and captions will line up automatically.
+
+1) hero-desktop-homepage.png
+   Description: Full desktop homepage hero (nav + headline + CTA + featured products)
+
+2) hero-mobile-homepage.png
+   Description: Mobile homepage hero view
+
+3) about-page.png
+   Description: About / brand story / trust-building section
+
+4) services-page.png
+   Description: Store features/services section (shipping, support, policies, etc.)
+
+5) pricing-packages-page.png
+   Description: Offer tiers / bundles / membership or promo package section
+
+6) before-after-section.png
+   Description: Transformation/results section (brand refresh, product presentation glow-up)
+
+7) reviews-section.png
+   Description: Customer testimonials and social proof
+
+8) booking-page-form.png
+   Description: Contact/order inquiry form page (or custom order request flow)
+
+9) booking-confirmation-flow.png
+   Description: Post-submit confirmation state (order/booking confirmation)
+
+10) dashboard-overview.png
+    Description: Admin dashboard overview with sales and order KPIs
+
+11) dashboard-pipeline.png
+    Description: Order pipeline (New -> Paid -> Processing -> Shipped -> Delivered)
+
+12) dashboard-schedule.png
+    Description: Fulfillment schedule / shipping queue / operations calendar
+
+13) dashboard-client-notes.png
+    Description: Customer notes, follow-ups, and support tasks
+
+14) dashboard-invoices.png
+    Description: Invoices, payments, and payout tracking panel
+
+15) mobile-website-services-trust-cta.png
+    Description: Mobile storefront view with products/services + trust + CTA
+
+16) mobile-lead-form.png
+    Description: Mobile lead/order inquiry form flow
+
+17) mobile-dashboard.png
+    Description: Mobile admin dashboard overview
+
+18) mobile-booking-flow.png
+    Description: Mobile checkout/order flow view
+
+Tip:
+- Keep image dimensions consistent within desktop and mobile groups for the cleanest carousel look.
+- After replacing files, hard refresh browser: Cmd+Shift+R

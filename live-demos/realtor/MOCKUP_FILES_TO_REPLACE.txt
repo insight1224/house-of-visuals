@@ -1,0 +1,84 @@
+Realtor demo mockup replacement map (keep exact filenames):
+
+Brand lock:
+- Use Prestige Realty Group across every mockup.
+- Do not use Northfield Realty Group or any other realtor brand name.
+- Match the existing Prestige thumbnail: navy, white, warm gold, luxury real estate styling.
+
+Files that currently need brand cleanup because they visually switch brands:
+- booking-page-form.png
+- booking-confirmation-flow.png
+- dashboard-overview.png
+- dashboard-client-notes.png
+- dashboard-invoices.png
+- dashboard-pipeline.png
+- dashboard-schedule.png
+- reviews-section.png
+- mobile-dashboard.png
+- mobile-lead-form.png
+- mobile-website-services-trust-cta.png
+
+The remaining files should still be checked, but they already appear closer to Prestige:
+- hero-desktop-homepage.png
+- hero-mobile-homepage.png
+- about-page.png
+- before-after-section.png
+- services-page.png
+- pricing-packages-page.png
+
+1) hero-desktop-homepage.png
+   - Realtor desktop homepage (hero + nav + lead CTA)
+
+2) about-page.png
+   - About/team trust section
+
+3) services-page.png
+   - Buyer/Seller services overview
+
+4) pricing-packages-page.png
+   - Service package / offer section
+
+5) before-after-section.png
+   - Property staging / transformation showcase
+
+6) reviews-section.png
+   - Realtor testimonials/social proof
+
+7) booking-page-form.png
+   - Consultation booking form
+
+8) booking-confirmation-flow.png
+   - Booking confirmation / success state
+
+9) dashboard-overview.png
+   - CRM dashboard overview
+
+10) dashboard-pipeline.png
+    - Lead pipeline (inquiry to closed)
+
+11) dashboard-schedule.png
+    - Showings/appointments schedule view
+
+12) dashboard-client-notes.png
+    - Client notes + follow-up tracking
+
+13) dashboard-invoices.png
+    - Commissions/invoices/payment tracking
+
+14) hero-mobile-homepage.png
+    - Mobile homepage view (listings + trust + CTA)
+
+15) mobile-lead-form.png
+    - Mobile lead form / quick consultation request
+
+16) mobile-dashboard.png
+    - Mobile CRM dashboard
+
+Optional (currently not used on page):
+17) mobile-website-services-trust-cta.png
+    - Extra mobile website or listing/trust/CTA view
+
+18) mobile-booking-flow.png
+    - Optional fourth mobile booking or showing flow to complete the on-the-move row
+
+Tip: After replacing files, hard refresh the browser (Cmd+Shift+R).

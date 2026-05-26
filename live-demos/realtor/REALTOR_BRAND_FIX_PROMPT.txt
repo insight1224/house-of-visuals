@@ -1,0 +1,36 @@
+Please regenerate the attached realtor demo mockup so the brand is consistent with the full demo.
+
+Brand to use everywhere:
+Prestige Realty Group
+
+Do not use:
+Northfield Realty Group
+Any other real estate brand name
+
+Keep the same overall layout, screen type, composition, dimensions, and purpose as the attached mockup. Only update the visible branding, logo area, footer/contact brand text, dashboard/sidebar brand, account/company name, email domain, and any places where the old brand appears.
+
+Brand style:
+Luxury real estate, navy and white with warm gold accents, elegant serif headings, polished high-end property visuals, professional agent/team tone. Match the existing Prestige Realty Group thumbnail and website mockups.
+
+Use these consistent details:
+- Brand name: Prestige Realty Group
+- Initials/logo direction: PRG or elegant Prestige Realty Group wordmark
+- Email examples: hello@prestigerealty.com or info@prestigerealtygroup.com
+- Phone: (555) 123-4567
+- Office/location examples: San Francisco, CA or Austin, TX
+- Agent/client names may stay generic, but keep them professional and consistent.
+
+Return the updated image at the same aspect ratio and resolution as the original. Keep all text clean, readable, correctly spelled, and not warped.
+
+Files that need this treatment:
+- booking-page-form.png
+- booking-confirmation-flow.png
+- dashboard-overview.png
+- dashboard-client-notes.png
+- dashboard-invoices.png
+- dashboard-pipeline.png
+- dashboard-schedule.png
+- reviews-section.png
+- mobile-dashboard.png
+- mobile-lead-form.png
+- mobile-website-services-trust-cta.png

@@ -1,0 +1,63 @@
+LOUNGE DEMO MOCKUP REPLACEMENT LIST
+Path: /Users/a.hicks/Documents/New project/House of Visuals/live-demos/clubs-lounges
+
+Use these exact filenames when you export/save mockups.
+If the filename matches exactly, the page and captions will line up automatically.
+
+1) hero-desktop-homepage.png
+   Description: Full desktop homepage hero (nav + headline + CTA + nightlife visual)
+
+2) hero-mobile-homepage.png
+   Description: Mobile homepage hero view
+
+3) about-page.png
+   Description: About / brand story / why guests choose the lounge
+
+4) services-page.png
+   Description: Services & experiences (VIP, bottle service, private events)
+
+5) pricing-packages-page.png
+   Description: VIP packages / memberships / ticket tiers
+
+6) before-after-section.png
+   Description: Venue transformation section (setup vs event-night atmosphere)
+
+7) reviews-section.png
+   Description: Guest testimonials and social proof
+
+8) booking-page-form.png
+   Description: VIP booking / reservation inquiry form page
+
+9) booking-confirmation-flow.png
+   Description: Post-submit reservation confirmation state
+
+10) dashboard-overview.png
+    Description: Main admin dashboard with tickets, VIP, and revenue stats
+
+11) dashboard-pipeline.png
+    Description: Event operations pipeline (Created -> Tickets Live -> Doors Open -> Closed)
+
+12) dashboard-schedule.png
+    Description: Event calendar / run-of-show / staff schedule
+
+13) dashboard-client-notes.png
+    Description: Guest notes, follow-ups, and promoter/vendor communications
+
+14) dashboard-invoices.png
+    Description: Invoices, payouts, and payment tracking panel
+
+15) mobile-website-services-trust-cta.png
+    Description: Mobile website view showing services + trust + CTA
+
+16) mobile-lead-form.png
+    Description: Mobile lead form (VIP request / reservation inquiry)
+
+17) mobile-dashboard.png
+    Description: Mobile dashboard overview
+
+18) mobile-booking-flow.png
+    Description: Mobile booking/ticket flow
+
+Tip:
+- Keep image dimensions consistent within desktop and mobile groups for the cleanest carousel look.
+- After replacing files, hard refresh browser: Cmd+Shift+R

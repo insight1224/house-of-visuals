@@ -1,0 +1,47 @@
+Contractor Demo Carousel Mapping (filename -> caption shown on page)
+
+1) hero-desktop-homepage.png
+   Caption: Homepage hero + navigation + call-to-action flow built for fast trust and quote conversions.
+
+2) about-page.png
+   Caption: About page focused on story, trust signals, and clear reasons to choose the brand.
+
+3) services-page.png
+   Caption: Service layout organized by cleaning type to help visitors choose quickly and book confidently.
+
+4) pricing-packages-page.png
+   Caption: Transparent package pricing designed to reduce friction and improve quote-to-booking conversion.
+
+5) before-after-section.png
+   Caption: Before-and-after transformation section that visually proves results and builds buyer confidence.
+
+6) reviews-section.png
+   Caption: Review showcase that strengthens social proof for both homeowners and business clients.
+
+7) booking-page-form.png
+   Caption: Booking form designed to collect qualified details while staying simple and mobile-friendly.
+
+8) booking-confirmation-flow.png
+   Caption: Post-submit confirmation experience that reassures clients and improves completion confidence.
+
+9) dashboard-overview.png
+   Caption: Main dashboard snapshot with KPI cards, schedules, team assignments, and performance overview.
+
+10) dashboard-pipeline.png
+    Caption: Pipeline view from new request to paid with stage-by-stage job tracking.
+
+11) dashboard-schedule.png
+    Caption: Schedule view for today’s cleanings and upcoming appointments with cleaner assignments.
+
+12) dashboard-client-notes.png
+    Caption: Client notes and follow-up panel that helps teams track priorities and next actions.
+
+13) dashboard-invoices.png
+    Caption: Invoice and payment tracking to monitor paid, pending, and overdue balances.
+
+Optional mobile/support mockups in this folder (not part of main desktop carousel order):
+- hero-mobile-homepage.png
+- mobile-website-services-trust-cta.png
+- mobile-lead-form.png
+- mobile-dashboard.png
+- mobile-booking-flow.png

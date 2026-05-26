@@ -1,0 +1,57 @@
+Replace these files with your real FOOD demo mockups (keep exact filenames):
+
+1) hero-desktop-homepage.png
+   Desktop homepage mockup (hero + nav + CTA)
+
+2) hero-mobile-homepage.png
+   Mobile homepage mockup
+
+3) about-page.png
+   About / brand story section mockup
+
+4) services-page.png
+   Services / offerings grid mockup (dine-in, catering, private events, etc.)
+
+5) pricing-packages-page.png
+   Packages or featured menu pricing section mockup
+
+6) before-after-section.png
+   Transformation/results section mockup (space, vibe, event setup, etc.)
+
+7) reviews-section.png
+   Testimonials / guest reviews section mockup
+
+8) booking-page-form.png
+   Reservations / inquiry form page mockup
+
+9) booking-confirmation-flow.png
+   Reservation confirmation / success state mockup
+
+10) dashboard-overview.png
+    Dashboard overview with top stat cards
+
+11) dashboard-pipeline.png
+    Operations pipeline view (request -> confirmed -> completed)
+
+12) dashboard-schedule.png
+    Schedule and upcoming reservations/events view
+
+13) dashboard-client-notes.png
+    Guest notes and follow-up management view
+
+14) dashboard-invoices.png
+    Invoice / payment tracking panel
+
+15) mobile-website-services-trust-cta.png
+    Mobile website mockup (services + trust + CTA)
+
+16) mobile-lead-form.png
+    Mobile quick reservation / lead form mockup
+
+17) mobile-dashboard.png
+    Mobile dashboard overview mockup
+
+18) mobile-booking-flow.png
+    Mobile multi-step reservation flow mockup
+
+Tip: After replacing files, hard refresh the browser (Cmd+Shift+R).

@@ -1,0 +1,63 @@
+GYM DEMO MOCKUP REPLACEMENT LIST
+Path: /Users/a.hicks/Documents/New project/House of Visuals/live-demos/sports-gyms
+
+Use these exact filenames when you export/save mockups.
+If the filename matches exactly, the page and captions will line up automatically.
+
+1) hero-desktop-homepage.png
+   Description: Full desktop homepage hero (nav + headline + CTA + gym visual)
+
+2) hero-mobile-homepage.png
+   Description: Mobile homepage hero view
+
+3) about-page.png
+   Description: About / Why train with us section (brand story + trust blocks)
+
+4) services-page.png
+   Description: Services grid (training programs + coaching options)
+
+5) pricing-packages-page.png
+   Description: Membership/pricing cards (starter, unlimited, coaching tiers)
+
+6) before-after-section.png
+   Description: Transformation section (before/after style results showcase)
+
+7) reviews-section.png
+   Description: Testimonials/reviews section
+
+8) booking-page-form.png
+   Description: Booking / consultation request form page
+
+9) booking-confirmation-flow.png
+   Description: Post-submit success/confirmation state
+
+10) dashboard-overview.png
+    Description: Main admin dashboard with KPI stat cards
+
+11) dashboard-pipeline.png
+    Operations pipeline view (request -> confirmed -> completed)
+
+12) dashboard-schedule.png
+    Description: Class schedule / upcoming sessions / trainer calendar
+
+13) dashboard-client-notes.png
+    Description: Client notes + follow-up tasks panel
+
+14) dashboard-invoices.png
+    Description: Invoices and payment tracking panel
+
+15) mobile-website-services-trust-cta.png
+    Description: Mobile website view showing services + trust + CTA
+
+16) mobile-lead-form.png
+    Description: Mobile lead/quote form flow
+
+17) mobile-dashboard.png
+    Description: Mobile admin dashboard overview
+
+18) mobile-booking-flow.png
+    Description: Mobile booking journey (steps + review + confirm)
+
+Tip:
+- Keep image dimensions consistent within desktop and mobile groups for the cleanest carousel look.
+- After replacing files, hard refresh browser: Cmd+Shift+R
