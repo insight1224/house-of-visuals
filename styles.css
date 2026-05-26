@@ -1179,6 +1179,10 @@ input:focus,textarea:focus,select:focus { outline: 2px solid rgba(31,122,87,.7);
   opacity: 0.96;
 }
 
+.nav-corner-art-mobile {
+  display: none;
+}
+
 .home-simple-hero {
   position: relative;
   z-index: 2;
@@ -5494,15 +5498,18 @@ input:focus,textarea:focus,select:focus { outline: 2px solid rgba(31,122,87,.7);
   }
 
   .nav-corner-art {
+    display: none;
+  }
+
+  .nav-corner-art-mobile {
     position: relative;
     display: block;
+    width: 100%;
     height: auto;
-    max-height: none;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 3 / 2;
     margin: 0 auto;
     object-fit: cover;
-    object-position: center top;
-    opacity: 1;
+    object-position: center;
   }
 
   .home-simple .hero-copy {
