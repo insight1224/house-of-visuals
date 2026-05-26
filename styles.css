@@ -1484,9 +1484,95 @@ input:focus,textarea:focus,select:focus { outline: 2px solid rgba(31,122,87,.7);
   color: var(--gold-soft);
 }
 
+.home-launch-trust {
+  position: relative;
+  z-index: 2;
+  padding-top: 1.7rem;
+}
+
+.launch-trust-intro {
+  max-width: 780px;
+  color: #2f3f35;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  margin-bottom: 1.2rem;
+}
+
+.launch-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.launch-trust-card {
+  border: 1px solid rgba(31, 122, 87, 0.22);
+  border-radius: 16px;
+  padding: 1.1rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(247, 251, 248, 0.98)),
+    radial-gradient(circle at 12% 10%, rgba(201, 162, 79, 0.16), transparent 36%);
+  box-shadow: 0 14px 24px rgba(13, 32, 23, 0.08);
+}
+
+.launch-trust-card span {
+  display: inline-grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 162, 79, 0.42);
+  background: rgba(13, 58, 40, 0.96);
+  color: #f4ddb0;
+  font-weight: 800;
+  font-size: 0.78rem;
+  margin-bottom: 0.85rem;
+}
+
+.launch-trust-card h3 {
+  color: #163124;
+  font-size: 1.08rem;
+  margin-bottom: 0.5rem;
+}
+
+.launch-trust-card p {
+  color: #35483d;
+  line-height: 1.58;
+  font-size: 0.95rem;
+}
+
+.launch-trust-footer {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(201, 162, 79, 0.32);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(12, 17, 14, 0.94), rgba(6, 9, 7, 0.96)),
+    radial-gradient(circle at 15% 20%, rgba(201, 162, 79, 0.2), transparent 34%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.22);
+}
+
+.launch-trust-footer p {
+  color: #f4ead2;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.launch-trust-footer .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 @media (max-width: 1024px) {
   .home-testimonial-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .launch-trust-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1534,6 +1620,16 @@ input:focus,textarea:focus,select:focus { outline: 2px solid rgba(31,122,87,.7);
   }
 
   .testimonial-submit-cta .btn {
+    width: 100%;
+  }
+
+  .launch-trust-footer {
+    align-items: stretch;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .launch-trust-footer .btn {
     width: 100%;
   }
 
