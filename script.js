@@ -676,6 +676,65 @@ const testimonialSuccess = document.querySelector("#testimonialSuccess");
 const referralSource = document.querySelector("#referralSource");
 const referralNameWrap = document.querySelector("#referralNameWrap");
 const referralNameInput = document.querySelector("#referralName");
+const businessEmail = "hello@houseofvisualsco.com";
+const formSubmitEndpoint = `https://formsubmit.co/ajax/${businessEmail}`;
+
+function formatParamsForEmail(params) {
+  return [...params.entries()].map(([key, value]) => `${key.replace(/\[\]$/, "")}: ${value}`).join("\n");
+}
+
+async function postToLocalEmailApi(endpoint, params) {
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body: params.toString(),
+  });
+  const result = await response.json().catch(() => ({
+    ok: false,
+    message: "The email service is not available from this server."
+  }));
+
+  if (!response.ok || !result.ok || result.saved_to) {
+    throw new Error(result.message || "The email service is not available from this server.");
+  }
+
+  return result;
+}
+
+async function postToFormSubmit(params, subject) {
+  const fallbackParams = new URLSearchParams(params);
+  fallbackParams.set("_subject", subject);
+  fallbackParams.set("_template", "table");
+  fallbackParams.set("_captcha", "false");
+  fallbackParams.set("_replyto", params.get("email") || businessEmail);
+
+  const response = await fetch(formSubmitEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      "Accept": "application/json"
+    },
+    body: fallbackParams.toString(),
+  });
+  const result = await response.json().catch(() => ({
+    success: response.ok,
+    message: response.ok ? "Message sent successfully." : "The backup email service is not available right now."
+  }));
+
+  if (!response.ok || result.success === false) {
+    throw new Error(result.message || "The backup email service is not available right now.");
+  }
+
+  return result;
+}
+
+async function sendWebsiteEmail(endpoint, params, subject) {
+  try {
+    return await postToLocalEmailApi(endpoint, params);
+  } catch (apiError) {
+    return postToFormSubmit(params, subject);
+  }
+}
 
 function toggleReferralField() {
   if (!referralSource || !referralNameWrap) return;
@@ -737,23 +796,11 @@ if (contactForm) {
         params.append(key, value);
       }
 
-      fallbackMailto = `mailto:hello@houseofvisualsco.com?subject=${encodeURIComponent("New House of Visuals Inquiry")}&body=${encodeURIComponent(
-        [...params.entries()].map(([key, value]) => `${key.replace(/\[\]$/, "")}: ${value}`).join("\n")
+      fallbackMailto = `mailto:${businessEmail}?subject=${encodeURIComponent("New House of Visuals Inquiry")}&body=${encodeURIComponent(
+        formatParamsForEmail(params)
       )}`;
 
-      const response = await fetch("/api/inquiry", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-        body: params.toString(),
-      });
-      const result = await response.json().catch(() => ({
-        ok: false,
-        message: "The inquiry service is not available from this server."
-      }));
-
-      if (!response.ok || !result.ok) {
-        throw new Error(result.message || "We could not send your inquiry right now.");
-      }
+      const result = await sendWebsiteEmail("/api/inquiry", params, "New House of Visuals Inquiry");
 
       if (formSuccess) {
         formSuccess.hidden = false;
@@ -765,9 +812,9 @@ if (contactForm) {
     } catch (error) {
       if (formSuccess) {
         formSuccess.hidden = false;
-        const cannotReachServer = error instanceof TypeError || /failed to fetch|not available from this server/i.test(error.message || "");
+        const cannotReachServer = error instanceof TypeError || /failed to fetch|not available from this server|backup email service/i.test(error.message || "");
         formSuccess.textContent = cannotReachServer
-          ? "We could not reach the inquiry service from this page. Please send your inquiry directly to hello@houseofvisualsco.com."
+          ? `We could not reach the inquiry service from this page. Please send your inquiry directly to ${businessEmail}.`
           : error.message || "Something went wrong while sending your inquiry. Please try again.";
         if (cannotReachServer && fallbackMailto) {
           const fallbackLink = document.createElement("a");
@@ -815,23 +862,11 @@ if (testimonialForm) {
         params.append(key, value);
       }
 
-      fallbackMailto = `mailto:hello@houseofvisualsco.com?subject=${encodeURIComponent("New House of Visuals Testimonial")}&body=${encodeURIComponent(
-        [...params.entries()].map(([key, value]) => `${key}: ${value}`).join("\n")
+      fallbackMailto = `mailto:${businessEmail}?subject=${encodeURIComponent("New House of Visuals Testimonial")}&body=${encodeURIComponent(
+        formatParamsForEmail(params)
       )}`;
 
-      const response = await fetch("/api/testimonial", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-        body: params.toString(),
-      });
-      const result = await response.json().catch(() => ({
-        ok: false,
-        message: "The testimonial service is not available from this server."
-      }));
-
-      if (!response.ok || !result.ok) {
-        throw new Error(result.message || "We could not send your testimonial right now.");
-      }
+      const result = await sendWebsiteEmail("/api/testimonial", params, "New House of Visuals Testimonial");
 
       if (testimonialSuccess) {
         testimonialSuccess.hidden = false;
@@ -843,9 +878,9 @@ if (testimonialForm) {
     } catch (error) {
       if (testimonialSuccess) {
         testimonialSuccess.hidden = false;
-        const cannotReachServer = error instanceof TypeError || /failed to fetch|not available from this server/i.test(error.message || "");
+        const cannotReachServer = error instanceof TypeError || /failed to fetch|not available from this server|backup email service/i.test(error.message || "");
         testimonialSuccess.textContent = cannotReachServer
-          ? "We could not reach the testimonial service from this page. Please send your testimonial directly to hello@houseofvisualsco.com."
+          ? `We could not reach the testimonial service from this page. Please send your testimonial directly to ${businessEmail}.`
           : error.message || "Something went wrong while sending your testimonial. Please try again.";
         if (cannotReachServer && fallbackMailto) {
           const fallbackLink = document.createElement("a");
