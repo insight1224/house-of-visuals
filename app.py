@@ -826,6 +826,106 @@ def import_prospects_from_csv(csv_text):
     return {"imported": imported, "skipped": skipped, "errors": errors[:10]}
 
 
+def get_industry_message_profile(industry_raw):
+    industry = (industry_raw or "local service").strip().lower()
+
+    profiles = {
+        "barber": {
+            "label": "barber shops",
+            "client_action": "book appointments, view services, and find the right cut or grooming service",
+            "value": "make it easier for new clients to book, understand your services, and come back again",
+        },
+        "barbers": {
+            "label": "barber shops",
+            "client_action": "book appointments, view services, and find the right cut or grooming service",
+            "value": "make it easier for new clients to book, understand your services, and come back again",
+        },
+        "barbershop": {
+            "label": "barber shops",
+            "client_action": "book appointments, view services, and find the right cut or grooming service",
+            "value": "make it easier for new clients to book, understand your services, and come back again",
+        },
+        "salon": {
+            "label": "salons",
+            "client_action": "view services, request appointments, and choose the right stylist or beauty service",
+            "value": "turn social media interest and website visits into real appointment requests",
+        },
+        "salons": {
+            "label": "salons",
+            "client_action": "view services, request appointments, and choose the right stylist or beauty service",
+            "value": "turn social media interest and website visits into real appointment requests",
+        },
+        "realtor": {
+            "label": "real estate professionals",
+            "client_action": "view listings, request consultations, and learn how you help buyers and sellers",
+            "value": "capture buyer and seller inquiries instead of relying only on social media or referrals",
+        },
+        "realtors": {
+            "label": "real estate professionals",
+            "client_action": "view listings, request consultations, and learn how you help buyers and sellers",
+            "value": "capture buyer and seller inquiries instead of relying only on social media or referrals",
+        },
+        "contractor": {
+            "label": "contractors",
+            "client_action": "review services, request estimates, and see past work",
+            "value": "turn website visitors into quote requests with a clearer project inquiry flow",
+        },
+        "contractors": {
+            "label": "contractors",
+            "client_action": "review services, request estimates, and see past work",
+            "value": "turn website visitors into quote requests with a clearer project inquiry flow",
+        },
+        "cleaning": {
+            "label": "cleaning businesses",
+            "client_action": "request quotes, review services, and schedule cleaning inquiries",
+            "value": "make it easier for residential or commercial clients to request service",
+        },
+        "restaurant": {
+            "label": "restaurants and food businesses",
+            "client_action": "view menus, place inquiries, book catering, or find location details quickly",
+            "value": "make the customer experience smoother from search to visit or order",
+        },
+        "restaurants": {
+            "label": "restaurants and food businesses",
+            "client_action": "view menus, place inquiries, book catering, or find location details quickly",
+            "value": "make the customer experience smoother from search to visit or order",
+        },
+        "health": {
+            "label": "health and wellness businesses",
+            "client_action": "learn about services, request appointments, and complete intake steps",
+            "value": "make the patient or client inquiry process feel clear, trustworthy, and easy",
+        },
+        "wellness": {
+            "label": "health and wellness businesses",
+            "client_action": "learn about services, request appointments, and complete intake steps",
+            "value": "make the patient or client inquiry process feel clear, trustworthy, and easy",
+        },
+        "event": {
+            "label": "event spaces and venues",
+            "client_action": "view the space, check services, and submit booking inquiries",
+            "value": "capture event inquiries and make it easier for people to request dates or details",
+        },
+        "event space": {
+            "label": "event spaces and venues",
+            "client_action": "view the space, check services, and submit booking inquiries",
+            "value": "capture event inquiries and make it easier for people to request dates or details",
+        },
+    }
+
+    if industry in profiles:
+        return profiles[industry]
+
+    for key, profile in profiles.items():
+        if key in industry:
+            return profile
+
+    return {
+        "label": f"{industry} businesses",
+        "client_action": "view services, submit inquiries, and understand the next step",
+        "value": "turn more online visitors into real inquiries",
+    }
+
+
 def generate_outreach_messages(prospect):
     business_name = prospect.get("business_name") or "your business"
     contact_name = prospect.get("contact_name") or ""
@@ -835,32 +935,27 @@ def generate_outreach_messages(prospect):
     suggested_offer = prospect.get("suggested_offer") or "website + lead system"
     recommended_demo = prospect.get("recommended_demo") or "business demo"
 
+    profile = get_industry_message_profile(industry_raw)
+    industry_label = profile["label"]
+    client_action = profile["client_action"]
+    value_line = profile["value"]
+
     greeting_name = contact_name.split()[0] if contact_name else "there"
 
-    industry_labels = {
-        "barber": "barber shops",
-        "barbers": "barber shops",
-        "barbershop": "barber shops",
-        "barbershops": "barber shops",
-        "salon": "salons",
-        "salons": "salons",
-        "realtor": "realtors",
-        "realtors": "realtors",
-        "cleaning": "cleaning businesses",
-        "contractor": "contractors",
-        "contractors": "contractors",
-    }
-    industry_label = industry_labels.get(industry_raw, f"{industry_raw} businesses")
-
     has_no_website = "no website" in website_status or "missing" in website_status
-    has_website = "website listed" in website_status or "review quality" in website_status
+    has_broken_website = "did not load" in website_status or "broken" in website_status
+    needs_improvement = "needs improvement" in website_status or "review quality" in website_status or "lower priority" in website_status
 
     if has_no_website:
         observation_dm = "I noticed there may not be a website listed, and I had a quick idea that could help."
-        observation_email = "I noticed there may not be a website listed, and that could be an opportunity to make it easier for new clients to find you and reach out."
-        demo_line = f"I have a {recommended_demo} that shows how a business like yours could showcase services, collect inquiries, and make follow-up easier."
-    elif has_website:
-        observation_dm = "I noticed you already have a website, and I had a quick idea that could make the online experience even stronger."
+        observation_email = "I noticed there may not be a website listed, which could be an opportunity to make it easier for new clients to find you and reach out."
+        demo_line = f"I have a {recommended_demo} that shows how a business like yours could showcase services, collect inquiries, and create a smoother client experience."
+    elif has_broken_website:
+        observation_dm = "I noticed a website is listed, but it may not be loading cleanly. I had a quick idea that could help."
+        observation_email = "I noticed a website is listed, but it may not be loading cleanly. That could be costing you inquiries from people who are already interested."
+        demo_line = f"I have a {recommended_demo} that shows how the online experience could be cleaned up and connected to a stronger inquiry flow."
+    elif needs_improvement:
+        observation_dm = "I noticed you already have a website, and I had a quick idea that could make the online experience stronger."
         observation_email = "I noticed you already have a website, and there may be an opportunity to strengthen the way visitors move from viewing your services to actually reaching out."
         demo_line = f"I have a {recommended_demo} that shows how the online experience could be improved with clearer service sections, inquiry capture, and a simple follow-up system."
     else:
@@ -872,7 +967,7 @@ def generate_outreach_messages(prospect):
 
 {observation_dm}
 
-I help {industry_label} create polished websites and simple lead systems that make it easier for potential clients to view services, request appointments, and follow up.
+I help {industry_label} create polished websites and simple lead systems that make it easier for potential clients to {client_action}.
 
 {demo_line}
 
@@ -884,7 +979,7 @@ I came across {business_name} and wanted to reach out with a quick idea.
 
 {observation_email}
 
-I help {industry_label} create polished websites, lead capture systems, and simple dashboards that make it easier to turn online visitors into real inquiries.
+I help {industry_label} create polished websites, lead capture systems, and simple dashboards that help {value_line}.
 
 Based on what I saw, I think {business_name} could benefit from {potential_need.lower()}.
 
@@ -898,7 +993,7 @@ House of Visuals"""
 
     follow_up = f"""Hey {greeting_name}, just following up in case you missed my last message.
 
-I thought {business_name} could be a good fit for a polished {suggested_offer.lower()} that helps turn more online visitors into inquiries.
+I thought {business_name} could be a good fit for a polished {suggested_offer.lower()} that helps {value_line}.
 
 I can send over a quick demo if you would like to see what I mean."""
 
@@ -1668,19 +1763,22 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                   <article class='message-card'>
                     <h3>Instagram DM</h3>
                     <p>Shorter and more casual for social media outreach.</p>
-                    <textarea class='outreach-copy' rows='9' readonly>{escape(generate_outreach_messages(prospect)['instagram_dm'])}</textarea>
+                    <textarea id='instagram-message' class='outreach-copy' rows='9' readonly>{escape(generate_outreach_messages(prospect)['instagram_dm'])}</textarea>
+                    <button class='btn-small copy-btn' type='button' data-copy-target='instagram-message'>Copy Instagram DM</button>
                   </article>
 
                   <article class='message-card'>
                     <h3>Email Version</h3>
                     <p>More polished for cold email or contact forms.</p>
-                    <textarea class='outreach-copy' rows='12' readonly>{escape(generate_outreach_messages(prospect)['email_message'])}</textarea>
+                    <textarea id='email-message' class='outreach-copy' rows='12' readonly>{escape(generate_outreach_messages(prospect)['email_message'])}</textarea>
+                    <button class='btn-small copy-btn' type='button' data-copy-target='email-message'>Copy Email</button>
                   </article>
 
                   <article class='message-card'>
                     <h3>Follow-Up Message</h3>
                     <p>Use this 2–4 days after the first message.</p>
-                    <textarea class='outreach-copy' rows='7' readonly>{escape(generate_outreach_messages(prospect)['follow_up'])}</textarea>
+                    <textarea id='followup-message' class='outreach-copy' rows='7' readonly>{escape(generate_outreach_messages(prospect)['follow_up'])}</textarea>
+                    <button class='btn-small copy-btn' type='button' data-copy-target='followup-message'>Copy Follow-Up</button>
                   </article>
                 </div>
 
@@ -2106,6 +2204,13 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 margin: 0 0 0.75rem;
                 color: var(--muted);
               }}
+              .copy-btn {{
+                margin-top: 0.75rem;
+                width: 100%;
+              }}
+              .copy-btn.copied {{
+                background: linear-gradient(135deg, #0f4a33, #1f7a57);
+              }}
               .score-checklist {{
                 border: 1px solid rgba(15, 74, 51, 0.14);
                 border-radius: 16px;
@@ -2303,6 +2408,38 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
                 checks.forEach(function (checkbox) {{
                   checkbox.addEventListener("change", updateScore);
+                }});
+
+                const copyButtons = Array.from(document.querySelectorAll(".copy-btn"));
+                copyButtons.forEach(function (button) {{
+                  button.addEventListener("click", async function () {{
+                    const targetId = button.dataset.copyTarget;
+                    const target = document.getElementById(targetId);
+                    if (!target) return;
+
+                    const text = target.value || target.textContent || "";
+
+                    try {{
+                      await navigator.clipboard.writeText(text);
+                      const originalText = button.textContent;
+                      button.textContent = "Copied!";
+                      button.classList.add("copied");
+
+                      setTimeout(function () {{
+                        button.textContent = originalText;
+                        button.classList.remove("copied");
+                      }}, 1600);
+                    }} catch (error) {{
+                      target.focus();
+                      target.select();
+                      document.execCommand("copy");
+                      const originalText = button.textContent;
+                      button.textContent = "Copied!";
+                      setTimeout(function () {{
+                        button.textContent = originalText;
+                      }}, 1600);
+                    }}
+                  }});
                 }});
               }});
             </script>
