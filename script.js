@@ -694,7 +694,7 @@ async function postToLocalEmailApi(endpoint, params) {
     message: "The email service is not available from this server."
   }));
 
-  if (!response.ok || !result.ok || result.saved_to) {
+  if (!response.ok || !result.ok) {
     throw new Error(result.message || "The email service is not available from this server.");
   }
 
