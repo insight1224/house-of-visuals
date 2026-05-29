@@ -1,9 +1,13 @@
 .env
 database.db
+leads.db
+*.sqlite
+*.sqlite3
 __pycache__/
 *.pyc
 .DS_Store
 inquiries/
+testimonials/
 
 *.mov
 *.mp4
