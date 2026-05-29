@@ -3,6 +3,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import argparse
 import csv
+import io
 import hashlib
 import hmac
 from datetime import datetime
@@ -22,7 +23,7 @@ import urllib.error
 PROJECT_DIR = Path(__file__).resolve().parent
 INQUIRY_DIR = PROJECT_DIR / "inquiries"
 TESTIMONIAL_DIR = PROJECT_DIR / "testimonials"
-DEFAULT_LEAD_STATUSES = ["New", "Contacted", "Interested", "Proposal Sent", "Won", "Lost"]
+DEFAULT_LEAD_STATUSES = ["New", "Contacted", "Interested", "Proposal Sent", "Won", "Lost", "Completed"]
 VALID_LEAD_STATUSES = set(DEFAULT_LEAD_STATUSES)
 
 DEFAULT_PROSPECT_STATUSES = [
@@ -1207,6 +1208,210 @@ class SiteHandler(SimpleHTTPRequestHandler):
             status=status,
         )
 
+    def _send_csv(self, filename, headers, rows):
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(headers)
+        writer.writerows(rows)
+
+        data = output.getvalue().encode("utf-8-sig")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/csv; charset=utf-8")
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _export_leads_csv(self, completed_only=False):
+        leads = get_leads()
+
+        if completed_only:
+            leads = [lead for lead in leads if lead.get("status") == "Completed"]
+            filename = "completed-projects.csv"
+        else:
+            leads = [lead for lead in leads if lead.get("status") != "Completed"]
+            filename = "active-leads.csv"
+
+        headers = [
+            "id",
+            "submitted_at",
+            "updated_at",
+            "status",
+            "full_name",
+            "business_name",
+            "email",
+            "phone",
+            "website_social",
+            "project_types",
+            "timeline",
+            "budget",
+            "referral_source",
+            "internal_notes",
+        ]
+
+        rows = []
+        for lead in leads:
+            rows.append([
+                lead.get("id", ""),
+                lead.get("submitted_at", ""),
+                lead.get("updated_at", ""),
+                lead.get("status", ""),
+                lead.get("full_name", ""),
+                lead.get("business_name", ""),
+                lead.get("email", ""),
+                lead.get("phone", ""),
+                lead.get("website_social", ""),
+                ", ".join(lead.get("project_types") or []),
+                lead.get("timeline", ""),
+                lead.get("budget", ""),
+                lead.get("referral_source", ""),
+                lead.get("internal_notes", ""),
+            ])
+
+        self._send_csv(filename, headers, rows)
+
+    def _export_prospects_csv(self):
+        prospects = get_prospects()
+
+        headers = [
+            "id",
+            "added_at",
+            "updated_at",
+            "business_name",
+            "contact_name",
+            "industry",
+            "city_state",
+            "website",
+            "instagram",
+            "facebook",
+            "email",
+            "phone",
+            "website_status",
+            "potential_need",
+            "suggested_offer",
+            "recommended_demo",
+            "lead_score",
+            "review_priority",
+            "why_this_prospect",
+            "status",
+            "last_contacted",
+            "next_follow_up",
+            "notes",
+        ]
+
+        rows = []
+        for prospect in prospects:
+            rows.append([
+                prospect.get("id", ""),
+                prospect.get("added_at", ""),
+                prospect.get("updated_at", ""),
+                prospect.get("business_name", ""),
+                prospect.get("contact_name", ""),
+                prospect.get("industry", ""),
+                prospect.get("city_state", ""),
+                prospect.get("website", ""),
+                prospect.get("instagram", ""),
+                prospect.get("facebook", ""),
+                prospect.get("email", ""),
+                prospect.get("phone", ""),
+                prospect.get("website_status", ""),
+                prospect.get("potential_need", ""),
+                prospect.get("suggested_offer", ""),
+                prospect.get("recommended_demo", ""),
+                prospect.get("lead_score", ""),
+                prospect.get("review_priority", ""),
+                prospect.get("why_this_prospect", ""),
+                prospect.get("status", ""),
+                prospect.get("last_contacted", ""),
+                prospect.get("next_follow_up", ""),
+                prospect.get("notes", ""),
+            ])
+
+        self._send_csv("prospects.csv", headers, rows)
+
+    def _render_completed_projects(self):
+        completed_leads = [lead for lead in get_leads() if lead.get("status") == "Completed"]
+
+        rows = []
+        for lead in completed_leads:
+            rows.append(
+                f"""
+                <tr>
+                  <td><a href="/admin/leads/{lead['id']}">#{lead['id']}</a></td>
+                  <td>{escape(lead.get('updated_at') or '')}</td>
+                  <td>
+                    <strong>{escape(lead.get('full_name') or 'Completed Project')}</strong>
+                    <span class="mobile-muted">{escape(lead.get('email') or '')}</span>
+                  </td>
+                  <td>{escape(lead.get('business_name') or '-')}</td>
+                  <td>{escape(lead.get('email') or '-')}</td>
+                  <td>{escape(lead.get('phone') or '-')}</td>
+                  <td>{escape(', '.join(lead.get('project_types') or []) or '-')}</td>
+                  <td>{escape(lead.get('budget') or '-')}</td>
+                  <td><a class="btn-small" href="/admin/leads/{lead['id']}">View</a></td>
+                </tr>
+                """
+            )
+
+        empty_state = """
+            <tr>
+              <td colspan="9">
+                <div class="empty-state">
+                  <h3>No completed projects yet.</h3>
+                  <p>When you change a lead status to Completed, it will move here automatically.</p>
+                  <a class="btn-small" href="/admin">Back to Leads</a>
+                </div>
+              </td>
+            </tr>
+        """
+
+        return self._admin_shell(
+            "Completed Projects",
+            f"""
+            <section class="hero">
+              <p>House of Visuals Admin</p>
+              <h1>Completed Projects</h1>
+              <a class="btn" href="/admin/completed/export">Export Completed CSV</a>
+            </section>
+
+            <section class="stats stats-four">
+              <article><strong>{len(completed_leads)}</strong><span>Completed Projects</span></article>
+              <article><strong>-</strong><span>Archived from Leads</span></article>
+              <article><strong>-</strong><span>Kept for Records</span></article>
+              <article><strong>-</strong><span>Export Ready</span></article>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Completed Project Log</h2>
+                  <p>These leads are hidden from the active dashboard once marked Completed.</p>
+                </div>
+                <a class="btn-small" href="/admin">View Active Leads</a>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Completed / Updated</th>
+                      <th>Name</th>
+                      <th>Business</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Service</th>
+                      <th>Budget</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>{''.join(rows) if rows else empty_state}</tbody>
+                </table>
+              </div>
+            </section>
+            """,
+        )
+
     def _render_research_helper(self, result=None, values=None):
         values = values or {}
         query_params = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
@@ -1526,7 +1731,10 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             <section class="hero">
               <p>House of Visuals Client Finder</p>
               <h1>Prospect Pipeline</h1>
-              <a class="btn" href="/admin/prospects/new">Add New Prospect</a>
+              <div class="quick-actions">
+                <a class="btn" href="/admin/prospects/new">Add New Prospect</a>
+                <a class="btn-small" href="/admin/prospects/export">Export Prospects CSV</a>
+              </div>
             </section>
 
             <section class="stats stats-four">{summary_cards}</section>
@@ -1805,7 +2013,8 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
         )
 
     def _render_leads_dashboard(self):
-        leads = get_leads()
+        all_leads = get_leads()
+        leads = [lead for lead in all_leads if lead.get("status") != "Completed"]
 
         query_params = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
         selected_status = query_params.get("status", [""])[0].strip()
@@ -1918,7 +2127,11 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             <section class="hero">
               <p>House of Visuals Lead Generator</p>
               <h1>Leads Dashboard</h1>
-              <a class="btn" href="/contact.html">View Public Form</a>
+              <div class="quick-actions">
+                <a class="btn" href="/contact.html">View Public Form</a>
+                <a class="btn-small" href="/admin/leads/export">Export Leads CSV</a>
+                <a class="btn-small" href="/admin/completed">Completed Projects</a>
+              </div>
             </section>
 
             <section class="stats stats-four">{summary_cards}</section>
@@ -2383,6 +2596,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 <div>
                   <a href="/admin">Leads</a>
                   <a href="/admin/prospects">Prospects</a>
+                  <a href="/admin/completed">Completed</a>
                   <a href="/admin/prospects/new">Add Prospect</a>
                   <a href="/admin/research">Research Helper</a>
                   <a href="/admin/prospects/import">Import</a>
@@ -2907,6 +3121,34 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             self.send_header("Set-Cookie", "hov_admin_session=; Path=/admin; Max-Age=0; HttpOnly; SameSite=Lax")
             self.send_header("Location", "/admin")
             self.end_headers()
+            return
+
+        if request_path == "/admin/leads/export":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._export_leads_csv(completed_only=False)
+            return
+
+        if request_path == "/admin/prospects/export":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._export_prospects_csv()
+            return
+
+        if request_path in {"/admin/completed", "/admin/completed/"}:
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._send_html(self._render_completed_projects())
+            return
+
+        if request_path == "/admin/completed/export":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._export_leads_csv(completed_only=True)
             return
 
         if request_path in {"/admin/prospects", "/admin/prospects/"}:
