@@ -3,6 +3,8 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import argparse
 import csv
+import hashlib
+import hmac
 from datetime import datetime
 from html import escape
 import json
@@ -518,28 +520,150 @@ class SiteHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _admin_session_signature(self):
+        token = os.getenv("HOV_ADMIN_TOKEN", "")
+        if not token:
+            return ""
+        return hmac.new(token.encode("utf-8"), b"house-of-visuals-admin", hashlib.sha256).hexdigest()
+
+    def _get_cookie(self, name):
+        cookie_header = self.headers.get("Cookie", "")
+        for part in cookie_header.split(";"):
+            if "=" not in part:
+                continue
+            key, value = part.strip().split("=", 1)
+            if key == name:
+                return value
+        return ""
+
     def _admin_allowed(self):
         token = os.getenv("HOV_ADMIN_TOKEN", "")
         is_local_request = self.client_address[0] in {"127.0.0.1", "::1", "localhost"}
         if not token:
             return is_local_request
+
         query = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
         header_token = self.headers.get("X-Admin-Token", "")
-        return header_token == token or token in query.get("token", [])
+        cookie_session = self._get_cookie("hov_admin_session")
 
-    def _send_admin_login_required(self):
+        if header_token == token or token in query.get("token", []):
+            return True
+
+        return hmac.compare_digest(cookie_session, self._admin_session_signature())
+
+    def _send_admin_login_required(self, message="Enter your admin password to continue.", status=401):
+        next_path = escape(self.path or "/admin")
+        error_html = f"<p class='error'>{escape(message)}</p>" if message else ""
         self._send_html(
-            """
+            f"""
             <!doctype html>
             <html lang="en">
-              <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Admin Access Required</title></head>
-              <body style="font-family: system-ui, sans-serif; padding: 2rem;">
-                <h1>Admin Access Required</h1>
-                <p>Add your admin token to the URL as <code>?token=YOUR_TOKEN</code> or send it in the <code>X-Admin-Token</code> header.</p>
+              <head>
+                <meta charset="utf-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <meta name="robots" content="noindex, nofollow" />
+                <title>Admin Login | House of Visuals</title>
+                <style>
+                  * {{ box-sizing: border-box; }}
+                  body {{
+                    margin: 0;
+                    min-height: 100vh;
+                    display: grid;
+                    place-items: center;
+                    font-family: Manrope, Inter, system-ui, sans-serif;
+                    color: #142119;
+                    background: linear-gradient(160deg, #f8f4eb, #eef7f0);
+                    padding: 1rem;
+                  }}
+                  .login-card {{
+                    width: min(100%, 440px);
+                    border: 1px solid rgba(15, 74, 51, 0.16);
+                    border-radius: 22px;
+                    background: rgba(255, 255, 255, 0.96);
+                    box-shadow: 0 18px 40px rgba(13, 32, 23, 0.12);
+                    padding: 1.4rem;
+                  }}
+                  .brand {{
+                    border-radius: 18px;
+                    background: linear-gradient(145deg, #0b130f, #123b2b);
+                    color: #f7f1e4;
+                    padding: 1.2rem;
+                    margin-bottom: 1rem;
+                  }}
+                  .brand p {{
+                    margin: 0 0 0.35rem;
+                    color: #ead7a7;
+                    font-weight: 800;
+                  }}
+                  h1 {{
+                    margin: 0;
+                    font-family: Georgia, serif;
+                    font-size: clamp(2rem, 8vw, 3rem);
+                    line-height: 1;
+                  }}
+                  label {{
+                    display: grid;
+                    gap: 0.45rem;
+                    color: #0f4a33;
+                    font-weight: 900;
+                    margin-bottom: 0.9rem;
+                  }}
+                  input {{
+                    width: 100%;
+                    border: 1px solid rgba(15, 74, 51, 0.22);
+                    border-radius: 14px;
+                    padding: 0.85rem;
+                    font: inherit;
+                  }}
+                  button {{
+                    width: 100%;
+                    border: 0;
+                    border-radius: 999px;
+                    background: linear-gradient(135deg, #1f7a57, #29a16f);
+                    color: #fff;
+                    font-weight: 900;
+                    padding: 0.9rem 1rem;
+                    cursor: pointer;
+                  }}
+                  .help {{
+                    color: #516257;
+                    font-size: 0.92rem;
+                    margin: 0.8rem 0 0;
+                  }}
+                  .error {{
+                    color: #8a2d1f;
+                    background: #fff1ed;
+                    border: 1px solid #f0b5a8;
+                    border-radius: 12px;
+                    padding: 0.7rem;
+                    margin: 0 0 0.9rem;
+                    font-weight: 800;
+                  }}
+                </style>
+              </head>
+              <body>
+                <main class="login-card">
+                  <section class="brand">
+                    <p>House of Visuals Admin</p>
+                    <h1>Admin Login</h1>
+                  </section>
+
+                  {error_html}
+
+                  <form method="post" action="/admin/login">
+                    <input type="hidden" name="next" value="{next_path}" />
+                    <label>Password
+                      <input type="password" name="password" autocomplete="current-password" required autofocus />
+                    </label>
+                    <button type="submit">Open Admin Dashboard</button>
+                  </form>
+
+                  <p class="help">Use your private admin password from Render: <strong>HOV_ADMIN_TOKEN</strong>.</p>
+                </main>
               </body>
             </html>
             """,
-            status=403,
+            status=status,
         )
 
     def _render_prospects_import(self, result=None):
@@ -1429,6 +1553,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                   <a href="/admin/prospects">Prospects</a>
                   <a href="/admin/prospects/new">Add Prospect</a>
                   <a href="/admin/prospects/import">Import</a>
+                  <a href="/admin/logout">Logout</a>
                 </div>
               </nav>
               {body}
@@ -1651,6 +1776,25 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
     def do_POST(self):
         request_path = self.path.split("?", 1)[0]
 
+        if request_path == "/admin/login":
+            content_length = int(self.headers.get("Content-Length", "0"))
+            raw = self.rfile.read(content_length).decode("utf-8", errors="replace")
+            fields = parse_qs(raw, keep_blank_values=True)
+
+            token = os.getenv("HOV_ADMIN_TOKEN", "")
+            password = first(fields, "password")
+            next_path = first(fields, "next") or "/admin"
+
+            if token and hmac.compare_digest(password, token):
+                self.send_response(303)
+                self.send_header("Set-Cookie", f"hov_admin_session={self._admin_session_signature()}; Path=/admin; HttpOnly; SameSite=Lax")
+                self.send_header("Location", next_path)
+                self.end_headers()
+                return
+
+            self._send_admin_login_required("Incorrect admin password. Please try again.", status=403)
+            return
+
         if request_path == "/admin/prospects/import":
             if not self._admin_allowed():
                 self._send_admin_login_required()
@@ -1809,6 +1953,17 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
     def do_GET(self):
         request_path = self.path.split("?", 1)[0]
+
+        if request_path == "/admin/login":
+            self._send_admin_login_required(status=200)
+            return
+
+        if request_path == "/admin/logout":
+            self.send_response(303)
+            self.send_header("Set-Cookie", "hov_admin_session=; Path=/admin; Max-Age=0; HttpOnly; SameSite=Lax")
+            self.send_header("Location", "/admin")
+            self.end_headers()
+            return
 
         if request_path in {"/admin/prospects", "/admin/prospects/"}:
             if not self._admin_allowed():
