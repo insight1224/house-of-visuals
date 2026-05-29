@@ -490,6 +490,74 @@ def search_google_places_text(search_query, max_results=10):
     return data.get("places", [])
 
 
+def analyze_website_quality(website_url):
+    result = {
+        "has_website": bool(website_url),
+        "loads": False,
+        "uses_https": False,
+        "has_mobile_viewport": False,
+        "has_contact_signal": False,
+        "has_booking_signal": False,
+        "has_form_signal": False,
+        "thin_content": False,
+        "issues": [],
+    }
+
+    if not website_url:
+        result["issues"].append("No website listed")
+        return result
+
+    result["uses_https"] = website_url.lower().startswith("https://")
+    if not result["uses_https"]:
+        result["issues"].append("Website is not using HTTPS")
+
+    try:
+        request = urllib.request.Request(
+            website_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 HouseOfVisualsProspectReview/1.0"
+            },
+        )
+        with urllib.request.urlopen(request, timeout=8) as response:
+            html = response.read(250000).decode("utf-8", errors="ignore").lower()
+            result["loads"] = True
+    except Exception as error:
+        result["issues"].append(f"Website did not load cleanly: {error}")
+        return result
+
+    if 'name="viewport"' in html or "name='viewport'" in html:
+        result["has_mobile_viewport"] = True
+    else:
+        result["issues"].append("No mobile viewport found")
+
+    contact_terms = ["contact", "call", "phone", "email", "visit us", "location"]
+    booking_terms = ["book", "booking", "appointment", "schedule", "reserve"]
+    form_terms = ["<form", "request", "inquiry", "quote", "consultation"]
+
+    result["has_contact_signal"] = any(term in html for term in contact_terms)
+    result["has_booking_signal"] = any(term in html for term in booking_terms)
+    result["has_form_signal"] = any(term in html for term in form_terms)
+
+    if not result["has_contact_signal"]:
+        result["issues"].append("No clear contact signal found")
+
+    if not result["has_booking_signal"]:
+        result["issues"].append("No clear booking/appointment signal found")
+
+    if not result["has_form_signal"]:
+        result["issues"].append("No clear form/inquiry signal found")
+
+    visible_text_estimate = re.sub(r"<[^>]+>", " ", html)
+    visible_text_estimate = re.sub(r"\s+", " ", visible_text_estimate).strip()
+
+    if len(visible_text_estimate) < 900:
+        result["thin_content"] = True
+        result["issues"].append("Website may have thin or limited content")
+
+    return result
+
+
+
 def place_to_prospect_fields(place, industry, suggested_offer, recommended_demo):
     business_name = (place.get("displayName") or {}).get("text", "").strip()
     city_state = place.get("formattedAddress", "").strip()
@@ -500,26 +568,51 @@ def place_to_prospect_fields(place, industry, suggested_offer, recommended_demo)
     review_count = place.get("userRatingCount", "")
     business_status = place.get("businessStatus", "")
 
+    website_check = analyze_website_quality(website)
     has_website = bool(website)
-    lead_score = 4
+    website_issues = website_check.get("issues", [])
+
+    lead_score = 2
 
     if not has_website:
-        lead_score += 3
+        lead_score += 6
+    else:
+        if not website_check.get("loads"):
+            lead_score += 6
+        if not website_check.get("uses_https"):
+            lead_score += 1
+        if not website_check.get("has_mobile_viewport"):
+            lead_score += 2
+        if not website_check.get("has_booking_signal"):
+            lead_score += 2
+        if not website_check.get("has_form_signal"):
+            lead_score += 1
+        if website_check.get("thin_content"):
+            lead_score += 1
+
     if phone:
         lead_score += 1
-    if rating:
+
+    if rating or review_count:
         lead_score += 1
+
     if recommended_demo:
         lead_score += 1
 
     lead_score = max(0, min(10, lead_score))
 
-    website_status = "Website listed - review quality" if has_website else "No website listed"
-    potential_need = (
-        "Review website quality, lead capture, booking/inquiry process, and service clarity."
-        if has_website
-        else "No website listed. Potential need for a branded website, inquiry form, and lead capture system."
-    )
+    if not has_website:
+        website_status = "No website listed - high priority"
+        potential_need = "No website listed. Strong opportunity for a branded website, inquiry form, booking/contact flow, and lead capture system."
+    elif not website_check.get("loads"):
+        website_status = "Website did not load cleanly - high priority"
+        potential_need = "Website is listed but did not load cleanly during review. Strong opportunity for a refreshed website and lead capture system."
+    elif lead_score >= 7:
+        website_status = "Website listed but likely needs improvement"
+        potential_need = "Website is listed, but basic review suggests possible gaps in mobile setup, booking/contact flow, inquiry capture, or content clarity."
+    else:
+        website_status = "Website listed - lower priority, manual review"
+        potential_need = "Website is listed. Manually review design quality, booking/inquiry process, lead capture, service clarity, and overall user experience."
 
     notes = [
         "Imported by Google Places Research Bot.",
@@ -527,6 +620,8 @@ def place_to_prospect_fields(place, industry, suggested_offer, recommended_demo)
         f"Rating: {rating or '-'}",
         f"Review Count: {review_count or '-'}",
         f"Business Status: {business_status or '-'}",
+        f"Website Review Issues: {'; '.join(website_issues) if website_issues else 'No major technical issues found in basic scan'}",
+        "Priority logic: no website, broken website, weak booking/contact signals, or thin content increase lead score.",
     ]
 
     return {
@@ -545,22 +640,58 @@ def place_to_prospect_fields(place, industry, suggested_offer, recommended_demo)
         "recommended_demo": [recommended_demo],
         "lead_score": [str(lead_score)],
         "status": ["Needs Review"],
-        "notes": ["\n".join(notes)],
+        "notes": [chr(10).join(notes)],
         "last_contacted": [""],
         "next_follow_up": [""],
     }
 
 
-def import_places_as_prospects(places, industry, suggested_offer, recommended_demo):
+def import_places_as_prospects(
+    places,
+    industry,
+    suggested_offer,
+    recommended_demo,
+    target_mode="needs_help",
+    min_score=0,
+):
     imported = 0
     skipped = 0
     errors = []
 
+    try:
+        min_score = int(min_score or 0)
+    except ValueError:
+        min_score = 0
+
+    min_score = max(0, min(10, min_score))
+
     for place in places:
         fields = place_to_prospect_fields(place, industry, suggested_offer, recommended_demo)
+
         business_name = first(fields, "business_name")
         website = first(fields, "website")
         phone = first(fields, "phone")
+        website_status = first(fields, "website_status").lower()
+        score = int(first(fields, "lead_score") or 0)
+
+        if target_mode == "no_website" and website:
+            skipped += 1
+            continue
+
+        if target_mode == "needs_help":
+            looks_like_need = (
+                "no website" in website_status
+                or "did not load" in website_status
+                or "needs improvement" in website_status
+                or score >= min_score
+            )
+            if not looks_like_need:
+                skipped += 1
+                continue
+
+        if score < min_score:
+            skipped += 1
+            continue
 
         if prospect_already_exists(business_name, website, phone):
             skipped += 1
@@ -574,7 +705,6 @@ def import_places_as_prospects(places, industry, suggested_offer, recommended_de
             errors.append(f"{business_name}: {error}")
 
     return {"imported": imported, "skipped": skipped, "errors": errors[:10]}
-
 
 
 def import_prospects_from_csv(csv_text):
@@ -722,6 +852,41 @@ I can send over a quick demo if you would like to see what I mean."""
 
 def generate_outreach_message(prospect):
     return generate_outreach_messages(prospect)["instagram_dm"]
+
+
+DEMO_OPTIONS = [
+    "Salon Demo",
+    "Realtor Demo",
+    "Health & Wellness Demo",
+    "Ecommerce Demo",
+    "Restaurant / Food Demo",
+    "Event Space Demo",
+    "Contractor Demo",
+    "Cleaning Business Demo",
+    "Content Creation Demo",
+    "Custom Business Demo",
+]
+
+OFFER_OPTIONS = [
+    "Website + lead system",
+    "Website redesign",
+    "New website build",
+    "Booking/inquiry flow",
+    "Lead capture dashboard",
+    "Content creation",
+    "Brand refresh",
+    "SEO/local visibility review",
+    "Google profile review",
+    "Social media content system",
+]
+
+
+def many_offer_values(fields):
+    selected = many(fields, "suggested_offer[]")
+    if selected:
+        return ", ".join(selected)
+    return first(fields, "suggested_offer") or "Website + lead system"
+
 
 
 class SiteHandler(SimpleHTTPRequestHandler):
@@ -900,8 +1065,10 @@ class SiteHandler(SimpleHTTPRequestHandler):
         industry = field_value("industry")
         location = field_value("location")
         recommended_demo = field_value("recommended_demo")
-        suggested_offer = field_value("suggested_offer", "Website + lead system")
+        suggested_offer = many_offer_values(values) if values else field_value("suggested_offer", "Website + lead system")
         max_results = field_value("max_results", "10")
+        min_score = field_value("min_score", "7")
+        target_mode = field_value("target_mode", "needs_help")
         search_query = field_value("search_query")
 
         search_phrase = search_query or " ".join(part for part in [industry, "in", location] if part).strip()
@@ -915,6 +1082,30 @@ class SiteHandler(SimpleHTTPRequestHandler):
 
         csv_template = f"""business_name,contact_name,industry,city_state,website,instagram,email,phone,website_status,potential_need,suggested_offer,recommended_demo,lead_score,status,next_follow_up
 Example Business,,{industry},{location},,,,,No website,Needs website/lead capture review,{suggested_offer},{recommended_demo},7,Needs Review,"""
+        selected_offers = []
+        if values:
+            selected_offers = many(values, "suggested_offer[]")
+            if not selected_offers and first(values, "suggested_offer"):
+                selected_offers = [first(values, "suggested_offer")]
+        elif suggested_offer:
+            selected_offers = [offer.strip() for offer in suggested_offer.split(",") if offer.strip()]
+
+        demo_options_html = "".join(
+            f"<option value='{escape(option)}' {'selected' if recommended_demo == option else ''}>{escape(option)}</option>"
+            for option in DEMO_OPTIONS
+        )
+
+        offer_options_html = "".join(
+            f"""
+            <label class='check-row'>
+              <input type='checkbox' name='suggested_offer[]' value='{escape(option)}' {'checked' if option in selected_offers else ''} />
+              <span>{escape(option)}</span>
+              <strong>Select</strong>
+            </label>
+            """
+            for option in OFFER_OPTIONS
+        )
+
 
         result_html = ""
         if result:
@@ -948,13 +1139,13 @@ Example Business,,{industry},{location},,,,,No website,Needs website/lead captur
             <section class="hero detail-hero">
               <p>House of Visuals Client Finder</p>
               <h1>Research Bot</h1>
-              <p>Use Google Places to automatically import prospects, or use the free research links below.</p>
+              <p>Use Google Places to find best-fit prospects, prioritizing businesses with no website or weak/outdated websites.</p>
             </section>
 
             {result_html}
 
             <section class="panel">
-              <h2>Automatic Google Places Search</h2>
+              <h2>Automatic Google Places Search - Best-Fit Prospects</h2>
               <form class="filters" method="post" action="/admin/research">
                 <label>Search Query
                   <input name="search_query" value="{escape(search_query)}" placeholder="barbers in Durham NC" />
@@ -972,15 +1163,35 @@ Example Business,,{industry},{location},,,,,No website,Needs website/lead captur
                   <input type="number" min="1" max="20" name="max_results" value="{escape(max_results)}" />
                 </label>
 
+                <label>Minimum Lead Score
+                  <input type="number" min="0" max="10" name="min_score" value="{escape(min_score)}" />
+                </label>
+
                 <label>Recommended Demo
-                  <input name="recommended_demo" value="{escape(recommended_demo)}" placeholder="Salon Demo" />
+                  <select name="recommended_demo">
+                    <option value="">Choose a demo</option>
+                    {demo_options_html}
+                  </select>
                 </label>
 
-                <label>Suggested Offer
-                  <input name="suggested_offer" value="{escape(suggested_offer)}" placeholder="Website + lead system" />
+                <label>Suggested Offers
+                  <details class="multi-dropdown">
+                    <summary>Choose one or more offers</summary>
+                    <div class="multi-dropdown-menu">
+                      {offer_options_html}
+                    </div>
+                  </details>
                 </label>
 
-                <button class="btn" type="submit">Find + Import Prospects</button>
+                <label>Target Mode
+                  <select name="target_mode">
+                    <option value="needs_help" {'selected' if target_mode == 'needs_help' else ''}>No website OR weak/outdated website</option>
+                    <option value="no_website" {'selected' if target_mode == 'no_website' else ''}>Only businesses with no website listed</option>
+                    <option value="all_scored" {'selected' if target_mode == 'all_scored' else ''}>All businesses, scored by need</option>
+                  </select>
+                </label>
+
+                <button class="btn" type="submit">Find + Import Best-Fit Prospects</button>
               </form>
             </section>
 
@@ -1834,6 +2045,44 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
               .danger-btn {{
                 background: linear-gradient(135deg, #8a2d1f, #c33d2b);
               }}
+              .multi-dropdown {{
+                width: 100%;
+                border: 1px solid rgba(15, 74, 51, 0.22);
+                border-radius: 12px;
+                background: #fff;
+                color: var(--ink);
+                overflow: hidden;
+              }}
+              .multi-dropdown summary {{
+                cursor: pointer;
+                list-style: none;
+                padding: 0.75rem;
+                font-weight: 900;
+                color: var(--green);
+              }}
+              .multi-dropdown summary::-webkit-details-marker {{
+                display: none;
+              }}
+              .multi-dropdown summary::after {{
+                content: "▼";
+                float: right;
+                font-size: 0.8rem;
+              }}
+              .multi-dropdown[open] summary::after {{
+                content: "▲";
+              }}
+              .multi-dropdown-menu {{
+                border-top: 1px solid rgba(15, 74, 51, 0.12);
+                padding: 0.4rem 0.75rem 0.75rem;
+                max-height: 280px;
+                overflow-y: auto;
+              }}
+              .multi-dropdown .check-row {{
+                grid-template-columns: auto 1fr;
+              }}
+              .multi-dropdown .check-row strong {{
+                display: none;
+              }}
               .stats {{ display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }}
 .stats-four {{ grid-template-columns: repeat(4, minmax(0, 1fr)); }}
               .stats article, .panel {{
@@ -2161,7 +2410,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 industry = first(fields, "industry")
                 location = first(fields, "location")
                 search_query = first(fields, "search_query")
-                suggested_offer = first(fields, "suggested_offer") or "Website + lead system"
+                suggested_offer = many_offer_values(fields)
                 recommended_demo = first(fields, "recommended_demo")
 
                 if not search_query:
@@ -2171,7 +2420,17 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                     raise RuntimeError("Enter a search query, or enter both industry and location.")
 
                 places = search_google_places_text(search_query, first(fields, "max_results") or 10)
-                result = import_places_as_prospects(places, industry or search_query, suggested_offer, recommended_demo)
+                target_mode = first(fields, "target_mode") or "needs_help"
+                min_score = first(fields, "min_score") or 0
+
+                result = import_places_as_prospects(
+                    places,
+                    industry or search_query,
+                    suggested_offer,
+                    recommended_demo,
+                    target_mode=target_mode,
+                    min_score=min_score,
+                )
                 self._send_html(self._render_research_helper(result, fields))
             except Exception as error:
                 self._send_html(
