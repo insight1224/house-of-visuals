@@ -13,7 +13,7 @@ import smtplib
 import sqlite3
 import ssl
 from email.message import EmailMessage
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, quote_plus
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -664,6 +664,120 @@ class SiteHandler(SimpleHTTPRequestHandler):
             </html>
             """,
             status=status,
+        )
+
+    def _render_research_helper(self):
+        query_params = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+
+        industry = query_params.get("industry", [""])[0].strip()
+        location = query_params.get("location", [""])[0].strip()
+        recommended_demo = query_params.get("recommended_demo", [""])[0].strip()
+        suggested_offer = query_params.get("suggested_offer", ["Website + lead system"])[0].strip()
+
+        search_phrase = " ".join(part for part in [industry, "in", location] if part).strip()
+        encoded_search = quote_plus(search_phrase or "small businesses near me")
+        encoded_instagram = quote_plus(f"site:instagram.com {industry} {location}".strip())
+        encoded_website_search = quote_plus(f"{industry} {location} website contact booking".strip())
+
+        maps_url = f"https://www.google.com/maps/search/?api=1&query={encoded_search}"
+        google_url = f"https://www.google.com/search?q={encoded_website_search}"
+        instagram_url = f"https://www.google.com/search?q={encoded_instagram}"
+
+        csv_template = f"""business_name,contact_name,industry,city_state,website,instagram,email,phone,website_status,potential_need,suggested_offer,recommended_demo,lead_score,status,next_follow_up
+Example Business,,{industry},{location},,,,,No website,Needs website/lead capture review,{suggested_offer},{recommended_demo},7,Needs Review,"""
+
+        extra_searches = [
+            f"{industry} {location}",
+            f"{industry} near {location}",
+            f"best {industry} in {location}",
+            f"{industry} {location} instagram",
+            f"{industry} {location} no website",
+        ]
+
+        extra_links = "".join(
+            f"<a class='btn-small' target='_blank' rel='noopener' href='https://www.google.com/search?q={quote_plus(item)}'>{escape(item)}</a>"
+            for item in extra_searches
+            if item.strip()
+        )
+
+        return self._admin_shell(
+            "Free Research Helper",
+            f"""
+            <section class="hero detail-hero">
+              <p>House of Visuals Client Finder</p>
+              <h1>Free Research Helper</h1>
+              <p>Use free search links to find businesses, then paste them into your Prospect Import page.</p>
+            </section>
+
+            <section class="panel">
+              <h2>Build Research Links</h2>
+              <form class="filters" method="get" action="/admin/research">
+                <label>Industry
+                  <input name="industry" value="{escape(industry)}" placeholder="Salons, Barbers, Realtors..." />
+                </label>
+
+                <label>Location
+                  <input name="location" value="{escape(location)}" placeholder="Durham NC" />
+                </label>
+
+                <label>Recommended Demo
+                  <input name="recommended_demo" value="{escape(recommended_demo)}" placeholder="Salon Demo" />
+                </label>
+
+                <label>Suggested Offer
+                  <input name="suggested_offer" value="{escape(suggested_offer)}" placeholder="Website + lead system" />
+                </label>
+
+                <button class="btn" type="submit">Create Research Links</button>
+              </form>
+            </section>
+
+            <section class="stats stats-four">
+              <article><strong>1</strong><span>Search</span></article>
+              <article><strong>2</strong><span>Copy Info</span></article>
+              <article><strong>3</strong><span>Import CSV</span></article>
+              <article><strong>4</strong><span>Review + Outreach</span></article>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Research Links</h2>
+                  <p>Open these links, collect businesses, then import them into your pipeline.</p>
+                </div>
+              </div>
+
+              <div class="quick-actions">
+                <a class="btn-small" target="_blank" rel="noopener" href="{maps_url}">Open Google Maps Search</a>
+                <a class="btn-small" target="_blank" rel="noopener" href="{google_url}">Open Google Search</a>
+                <a class="btn-small" target="_blank" rel="noopener" href="{instagram_url}">Open Instagram Search</a>
+                <a class="btn-small" href="/admin/prospects/import">Go to Import Prospects</a>
+              </div>
+            </section>
+
+            <section class="panel">
+              <h2>Extra Search Ideas</h2>
+              <p>Use these to find more businesses in the same niche.</p>
+              <div class="quick-actions">{extra_links}</div>
+            </section>
+
+            <section class="panel">
+              <h2>CSV Starter Template</h2>
+              <p>Copy this into a spreadsheet, replace the example row with real businesses, then paste the CSV into Import Prospects.</p>
+              <textarea class="outreach-copy" rows="7" readonly>{escape(csv_template)}</textarea>
+              <div class="quick-actions">
+                <a class="btn-small" href="/admin/prospects/import">Open Import Page</a>
+              </div>
+            </section>
+
+            <section class="panel">
+              <h2>Free Workflow</h2>
+              <p><strong>Step 1:</strong> Open Google Maps Search and find small businesses.</p>
+              <p><strong>Step 2:</strong> Copy the business name, website, phone, Instagram, and notes into your CSV.</p>
+              <p><strong>Step 3:</strong> Paste your CSV into Import Prospects.</p>
+              <p><strong>Step 4:</strong> Review each prospect, use the score checklist, and send the generated outreach message.</p>
+            </section>
+            """,
         )
 
     def _render_prospects_import(self, result=None):
@@ -1552,6 +1666,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                   <a href="/admin">Leads</a>
                   <a href="/admin/prospects">Prospects</a>
                   <a href="/admin/prospects/new">Add Prospect</a>
+                  <a href="/admin/research">Research Helper</a>
                   <a href="/admin/prospects/import">Import</a>
                   <a href="/admin/logout">Logout</a>
                 </div>
@@ -1953,6 +2068,13 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
     def do_GET(self):
         request_path = self.path.split("?", 1)[0]
+
+        if request_path == "/admin/research":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._send_html(self._render_research_helper())
+            return
 
         if request_path == "/admin/login":
             self._send_admin_login_required(status=200)
