@@ -627,19 +627,52 @@ def import_prospects_from_csv(csv_text):
 def generate_outreach_messages(prospect):
     business_name = prospect.get("business_name") or "your business"
     contact_name = prospect.get("contact_name") or ""
-    industry = (prospect.get("industry") or "local").lower()
-    website_status = prospect.get("website_status") or "there may be an opportunity to improve your online presence"
-    potential_need = prospect.get("potential_need") or "a stronger website and lead capture process"
-    suggested_offer = prospect.get("suggested_offer") or "a website and lead system"
+    industry_raw = (prospect.get("industry") or "local service").strip().lower()
+    website_status = (prospect.get("website_status") or "").strip().lower()
+    potential_need = prospect.get("potential_need") or "a stronger online experience and lead capture process"
+    suggested_offer = prospect.get("suggested_offer") or "website + lead system"
     recommended_demo = prospect.get("recommended_demo") or "business demo"
 
     greeting_name = contact_name.split()[0] if contact_name else "there"
 
-    instagram_dm = f"""Hey {greeting_name}, I came across {business_name} and noticed {website_status.lower()}.
+    industry_labels = {
+        "barber": "barber shops",
+        "barbers": "barber shops",
+        "barbershop": "barber shops",
+        "barbershops": "barber shops",
+        "salon": "salons",
+        "salons": "salons",
+        "realtor": "realtors",
+        "realtors": "realtors",
+        "cleaning": "cleaning businesses",
+        "contractor": "contractors",
+        "contractors": "contractors",
+    }
+    industry_label = industry_labels.get(industry_raw, f"{industry_raw} businesses")
 
-I help {industry} businesses create polished websites, lead capture systems, and simple dashboards so potential clients can view services, submit inquiries, and follow up with less back-and-forth.
+    has_no_website = "no website" in website_status or "missing" in website_status
+    has_website = "website listed" in website_status or "review quality" in website_status
 
-I have a {recommended_demo} that shows what this could look like.
+    if has_no_website:
+        observation_dm = "I noticed there may not be a website listed, and I had a quick idea that could help."
+        observation_email = "I noticed there may not be a website listed, and that could be an opportunity to make it easier for new clients to find you and reach out."
+        demo_line = f"I have a {recommended_demo} that shows how a business like yours could showcase services, collect inquiries, and make follow-up easier."
+    elif has_website:
+        observation_dm = "I noticed you already have a website, and I had a quick idea that could make the online experience even stronger."
+        observation_email = "I noticed you already have a website, and there may be an opportunity to strengthen the way visitors move from viewing your services to actually reaching out."
+        demo_line = f"I have a {recommended_demo} that shows how the online experience could be improved with clearer service sections, inquiry capture, and a simple follow-up system."
+    else:
+        observation_dm = "I came across your business and had a quick idea that could help with your online presence."
+        observation_email = "I came across your business and thought there may be an opportunity to strengthen your online presence and inquiry process."
+        demo_line = f"I have a {recommended_demo} that shows what this could look like for a business like yours."
+
+    instagram_dm = f"""Hey {greeting_name}, I came across {business_name} and wanted to reach out with a quick idea.
+
+{observation_dm}
+
+I help {industry_label} create polished websites and simple lead systems that make it easier for potential clients to view services, request appointments, and follow up.
+
+{demo_line}
 
 Would you like me to send it over?"""
 
@@ -647,11 +680,13 @@ Would you like me to send it over?"""
 
 I came across {business_name} and wanted to reach out with a quick idea.
 
-I noticed {website_status.lower()}, and based on what I saw, there may be an opportunity to improve your online presence with {potential_need.lower()}.
+{observation_email}
 
-I help {industry} businesses create polished websites, lead capture systems, and simple dashboards that make it easier to turn visitors into real inquiries.
+I help {industry_label} create polished websites, lead capture systems, and simple dashboards that make it easier to turn online visitors into real inquiries.
 
-I also have a {recommended_demo} that shows what this type of system could look like for a business like yours.
+Based on what I saw, I think {business_name} could benefit from {potential_need.lower()}.
+
+{demo_line}
 
 Would you be open to me sending it over?
 
