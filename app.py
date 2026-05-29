@@ -276,6 +276,19 @@ def update_lead(lead_id, status, internal_notes):
         )
 
 
+def delete_lead(lead_id):
+    init_database()
+    with db_connect() as connection:
+        connection.execute("DELETE FROM leads WHERE id = ?", (lead_id,))
+
+
+def delete_prospect(prospect_id):
+    init_database()
+    with db_connect() as connection:
+        connection.execute("DELETE FROM prospects WHERE id = ?", (prospect_id,))
+
+
+
 def create_prospect(fields):
     init_database()
     now = datetime.now().isoformat(timespec="seconds")
@@ -1392,6 +1405,16 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
               </section>
               """ if is_edit else ""}
 
+              {f"""
+              <section class='panel danger-panel'>
+                <h2>Delete Prospect</h2>
+                <p>This permanently removes this prospect from your pipeline.</p>
+                <form method='post' action='/admin/prospects/{prospect['id']}/delete' onsubmit="return confirm('Delete this prospect permanently? This cannot be undone.');">
+                  <button class='btn danger-btn' type='submit'>Delete Prospect</button>
+                </form>
+              </section>
+              """ if is_edit else ""}
+
             </form>
             """,
         )
@@ -1630,6 +1653,14 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
               <h2>Full Submission</h2>
               <dl class="details full-fields">{field_rows}</dl>
             </section>
+
+            <section class="panel danger-panel">
+              <h2>Delete Lead</h2>
+              <p>This permanently removes this lead from your dashboard.</p>
+              <form method="post" action="/admin/leads/{lead['id']}/delete" onsubmit="return confirm('Delete this lead permanently? This cannot be undone.');">
+                <button class="btn danger-btn" type="submit">Delete Lead</button>
+              </form>
+            </section>
             """,
         )
         self._send_html(html)
@@ -1792,6 +1823,16 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
               }}
               .check-row strong {{
                 color: var(--green);
+              }}
+              .danger-panel {{
+                border-color: rgba(138, 45, 31, 0.22);
+                background: #fff7f4;
+              }}
+              .danger-panel h2 {{
+                color: #8a2d1f;
+              }}
+              .danger-btn {{
+                background: linear-gradient(135deg, #8a2d1f, #c33d2b);
               }}
               .stats {{ display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }}
 .stats-four {{ grid-template-columns: repeat(4, minmax(0, 1fr)); }}
@@ -2161,6 +2202,20 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             self._send_admin_login_required("Incorrect admin password. Please try again.", status=403)
             return
 
+        if request_path.startswith("/admin/prospects/") and request_path.endswith("/delete"):
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                prospect_id = int(request_path.rstrip("/").split("/")[-2])
+                delete_prospect(prospect_id)
+                self.send_response(303)
+                self.send_header("Location", "/admin/prospects")
+                self.end_headers()
+            except Exception as error:
+                self._send_json({"ok": False, "message": str(error)}, status=400)
+            return
+
         if request_path == "/admin/prospects/import":
             if not self._admin_allowed():
                 self._send_admin_login_required()
@@ -2210,6 +2265,20 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 update_prospect(prospect_id, fields)
                 self.send_response(303)
                 self.send_header("Location", f"/admin/prospects/{prospect_id}")
+                self.end_headers()
+            except Exception as error:
+                self._send_json({"ok": False, "message": str(error)}, status=400)
+            return
+
+        if request_path.startswith("/admin/leads/") and request_path.endswith("/delete"):
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                lead_id = int(request_path.rstrip("/").split("/")[-2])
+                delete_lead(lead_id)
+                self.send_response(303)
+                self.send_header("Location", "/admin")
                 self.end_headers()
             except Exception as error:
                 self._send_json({"ok": False, "message": str(error)}, status=400)
