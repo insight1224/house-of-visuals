@@ -14,6 +14,8 @@ import sqlite3
 import ssl
 from email.message import EmailMessage
 from urllib.parse import parse_qs, quote_plus
+import urllib.request
+import urllib.error
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -390,6 +392,178 @@ def update_prospect(prospect_id, fields):
         )
 
 
+def prospect_already_exists(business_name, website="", phone=""):
+    init_database()
+    conditions = []
+    values = []
+
+    if business_name:
+        conditions.append("LOWER(business_name) = LOWER(?)")
+        values.append(business_name)
+
+    if website:
+        conditions.append("website = ?")
+        values.append(website)
+
+    if phone:
+        conditions.append("phone = ?")
+        values.append(phone)
+
+    if not conditions:
+        return False
+
+    with db_connect() as connection:
+        row = connection.execute(
+            f"SELECT id FROM prospects WHERE {' OR '.join(conditions)} LIMIT 1",
+            values,
+        ).fetchone()
+        return bool(row)
+
+
+def search_google_places_text(search_query, max_results=10):
+    api_key = os.getenv("GOOGLE_PLACES_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("Missing GOOGLE_PLACES_API_KEY. Add it in Render environment variables, then redeploy.")
+
+    try:
+        max_results = int(max_results or 10)
+    except ValueError:
+        max_results = 10
+
+    max_results = max(1, min(20, max_results))
+
+    endpoint = "https://places.googleapis.com/v1/places:searchText"
+    payload = json.dumps(
+        {
+            "textQuery": search_query,
+            "maxResultCount": max_results,
+        }
+    ).encode("utf-8")
+
+    field_mask = ",".join(
+        [
+            "places.id",
+            "places.displayName",
+            "places.formattedAddress",
+            "places.nationalPhoneNumber",
+            "places.websiteUri",
+            "places.googleMapsUri",
+            "places.rating",
+            "places.userRatingCount",
+            "places.businessStatus",
+        ]
+    )
+
+    request = urllib.request.Request(
+        endpoint,
+        data=payload,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": api_key,
+            "X-Goog-FieldMask": field_mask,
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=25) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        details = error.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Google Places search failed: {error.code} {details}") from error
+    except Exception as error:
+        raise RuntimeError(f"Google Places search failed: {error}") from error
+
+    return data.get("places", [])
+
+
+def place_to_prospect_fields(place, industry, suggested_offer, recommended_demo):
+    business_name = (place.get("displayName") or {}).get("text", "").strip()
+    city_state = place.get("formattedAddress", "").strip()
+    website = place.get("websiteUri", "").strip()
+    phone = place.get("nationalPhoneNumber", "").strip()
+    google_maps = place.get("googleMapsUri", "").strip()
+    rating = place.get("rating", "")
+    review_count = place.get("userRatingCount", "")
+    business_status = place.get("businessStatus", "")
+
+    has_website = bool(website)
+    lead_score = 4
+
+    if not has_website:
+        lead_score += 3
+    if phone:
+        lead_score += 1
+    if rating:
+        lead_score += 1
+    if recommended_demo:
+        lead_score += 1
+
+    lead_score = max(0, min(10, lead_score))
+
+    website_status = "Website listed - review quality" if has_website else "No website listed"
+    potential_need = (
+        "Review website quality, lead capture, booking/inquiry process, and service clarity."
+        if has_website
+        else "No website listed. Potential need for a branded website, inquiry form, and lead capture system."
+    )
+
+    notes = [
+        "Imported by Google Places Research Bot.",
+        f"Google Maps: {google_maps or '-'}",
+        f"Rating: {rating or '-'}",
+        f"Review Count: {review_count or '-'}",
+        f"Business Status: {business_status or '-'}",
+    ]
+
+    return {
+        "business_name": [business_name or "Unnamed Business"],
+        "contact_name": [""],
+        "industry": [industry],
+        "city_state": [city_state],
+        "website": [website],
+        "instagram": [""],
+        "facebook": [""],
+        "email": [""],
+        "phone": [phone],
+        "website_status": [website_status],
+        "potential_need": [potential_need],
+        "suggested_offer": [suggested_offer],
+        "recommended_demo": [recommended_demo],
+        "lead_score": [str(lead_score)],
+        "status": ["Needs Review"],
+        "notes": ["\n".join(notes)],
+        "last_contacted": [""],
+        "next_follow_up": [""],
+    }
+
+
+def import_places_as_prospects(places, industry, suggested_offer, recommended_demo):
+    imported = 0
+    skipped = 0
+    errors = []
+
+    for place in places:
+        fields = place_to_prospect_fields(place, industry, suggested_offer, recommended_demo)
+        business_name = first(fields, "business_name")
+        website = first(fields, "website")
+        phone = first(fields, "phone")
+
+        if prospect_already_exists(business_name, website, phone):
+            skipped += 1
+            continue
+
+        try:
+            create_prospect(fields)
+            imported += 1
+        except Exception as error:
+            skipped += 1
+            errors.append(f"{business_name}: {error}")
+
+    return {"imported": imported, "skipped": skipped, "errors": errors[:10]}
+
+
+
 def import_prospects_from_csv(csv_text):
     init_database()
     imported = 0
@@ -666,15 +840,23 @@ class SiteHandler(SimpleHTTPRequestHandler):
             status=status,
         )
 
-    def _render_research_helper(self):
+    def _render_research_helper(self, result=None, values=None):
+        values = values or {}
         query_params = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
 
-        industry = query_params.get("industry", [""])[0].strip()
-        location = query_params.get("location", [""])[0].strip()
-        recommended_demo = query_params.get("recommended_demo", [""])[0].strip()
-        suggested_offer = query_params.get("suggested_offer", ["Website + lead system"])[0].strip()
+        def field_value(name, default=""):
+            if values and name in values:
+                return first(values, name)
+            return query_params.get(name, [default])[0].strip()
 
-        search_phrase = " ".join(part for part in [industry, "in", location] if part).strip()
+        industry = field_value("industry")
+        location = field_value("location")
+        recommended_demo = field_value("recommended_demo")
+        suggested_offer = field_value("suggested_offer", "Website + lead system")
+        max_results = field_value("max_results", "10")
+        search_query = field_value("search_query")
+
+        search_phrase = search_query or " ".join(part for part in [industry, "in", location] if part).strip()
         encoded_search = quote_plus(search_phrase or "small businesses near me")
         encoded_instagram = quote_plus(f"site:instagram.com {industry} {location}".strip())
         encoded_website_search = quote_plus(f"{industry} {location} website contact booking".strip())
@@ -685,6 +867,18 @@ class SiteHandler(SimpleHTTPRequestHandler):
 
         csv_template = f"""business_name,contact_name,industry,city_state,website,instagram,email,phone,website_status,potential_need,suggested_offer,recommended_demo,lead_score,status,next_follow_up
 Example Business,,{industry},{location},,,,,No website,Needs website/lead capture review,{suggested_offer},{recommended_demo},7,Needs Review,"""
+
+        result_html = ""
+        if result:
+            errors = "".join(f"<li>{escape(error)}</li>" for error in result.get("errors", []))
+            result_html = f"""
+            <section class="panel">
+              <h2>Google Places Bot Results</h2>
+              <p><strong>{result.get('imported', 0)}</strong> imported into Prospects. <strong>{result.get('skipped', 0)}</strong> skipped as duplicates or errors.</p>
+              {f"<ul>{errors}</ul>" if errors else ""}
+              <a class="btn-small" href="/admin/prospects">View Prospect Pipeline</a>
+            </section>
+            """
 
         extra_searches = [
             f"{industry} {location}",
@@ -701,23 +895,33 @@ Example Business,,{industry},{location},,,,,No website,Needs website/lead captur
         )
 
         return self._admin_shell(
-            "Free Research Helper",
+            "Research Bot",
             f"""
             <section class="hero detail-hero">
               <p>House of Visuals Client Finder</p>
-              <h1>Free Research Helper</h1>
-              <p>Use free search links to find businesses, then paste them into your Prospect Import page.</p>
+              <h1>Research Bot</h1>
+              <p>Use Google Places to automatically import prospects, or use the free research links below.</p>
             </section>
 
+            {result_html}
+
             <section class="panel">
-              <h2>Build Research Links</h2>
-              <form class="filters" method="get" action="/admin/research">
+              <h2>Automatic Google Places Search</h2>
+              <form class="filters" method="post" action="/admin/research">
+                <label>Search Query
+                  <input name="search_query" value="{escape(search_query)}" placeholder="barbers in Durham NC" />
+                </label>
+
                 <label>Industry
-                  <input name="industry" value="{escape(industry)}" placeholder="Salons, Barbers, Realtors..." />
+                  <input name="industry" value="{escape(industry)}" placeholder="Barber, Salon, Realtor..." />
                 </label>
 
                 <label>Location
                   <input name="location" value="{escape(location)}" placeholder="Durham NC" />
+                </label>
+
+                <label>Max Results
+                  <input type="number" min="1" max="20" name="max_results" value="{escape(max_results)}" />
                 </label>
 
                 <label>Recommended Demo
@@ -728,25 +932,13 @@ Example Business,,{industry},{location},,,,,No website,Needs website/lead captur
                   <input name="suggested_offer" value="{escape(suggested_offer)}" placeholder="Website + lead system" />
                 </label>
 
-                <button class="btn" type="submit">Create Research Links</button>
+                <button class="btn" type="submit">Find + Import Prospects</button>
               </form>
             </section>
 
-            <section class="stats stats-four">
-              <article><strong>1</strong><span>Search</span></article>
-              <article><strong>2</strong><span>Copy Info</span></article>
-              <article><strong>3</strong><span>Import CSV</span></article>
-              <article><strong>4</strong><span>Review + Outreach</span></article>
-            </section>
-
             <section class="panel">
-              <div class="panel-head">
-                <div>
-                  <h2>Research Links</h2>
-                  <p>Open these links, collect businesses, then import them into your pipeline.</p>
-                </div>
-              </div>
-
+              <h2>Free Research Links</h2>
+              <p>Use these if you want to manually double-check results or collect more prospects for CSV import.</p>
               <div class="quick-actions">
                 <a class="btn-small" target="_blank" rel="noopener" href="{maps_url}">Open Google Maps Search</a>
                 <a class="btn-small" target="_blank" rel="noopener" href="{google_url}">Open Google Search</a>
@@ -757,25 +949,15 @@ Example Business,,{industry},{location},,,,,No website,Needs website/lead captur
 
             <section class="panel">
               <h2>Extra Search Ideas</h2>
-              <p>Use these to find more businesses in the same niche.</p>
               <div class="quick-actions">{extra_links}</div>
             </section>
 
             <section class="panel">
               <h2>CSV Starter Template</h2>
-              <p>Copy this into a spreadsheet, replace the example row with real businesses, then paste the CSV into Import Prospects.</p>
               <textarea class="outreach-copy" rows="7" readonly>{escape(csv_template)}</textarea>
               <div class="quick-actions">
                 <a class="btn-small" href="/admin/prospects/import">Open Import Page</a>
               </div>
-            </section>
-
-            <section class="panel">
-              <h2>Free Workflow</h2>
-              <p><strong>Step 1:</strong> Open Google Maps Search and find small businesses.</p>
-              <p><strong>Step 2:</strong> Copy the business name, website, phone, Instagram, and notes into your CSV.</p>
-              <p><strong>Step 3:</strong> Paste your CSV into Import Prospects.</p>
-              <p><strong>Step 4:</strong> Review each prospect, use the score checklist, and send the generated outreach message.</p>
             </section>
             """,
         )
@@ -1890,6 +2072,40 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
     def do_POST(self):
         request_path = self.path.split("?", 1)[0]
+
+        if request_path == "/admin/research":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", "0"))
+                raw = self.rfile.read(content_length).decode("utf-8", errors="replace")
+                fields = parse_qs(raw, keep_blank_values=True)
+
+                industry = first(fields, "industry")
+                location = first(fields, "location")
+                search_query = first(fields, "search_query")
+                suggested_offer = first(fields, "suggested_offer") or "Website + lead system"
+                recommended_demo = first(fields, "recommended_demo")
+
+                if not search_query:
+                    search_query = " ".join(part for part in [industry, "in", location] if part).strip()
+
+                if not search_query:
+                    raise RuntimeError("Enter a search query, or enter both industry and location.")
+
+                places = search_google_places_text(search_query, first(fields, "max_results") or 10)
+                result = import_places_as_prospects(places, industry or search_query, suggested_offer, recommended_demo)
+                self._send_html(self._render_research_helper(result, fields))
+            except Exception as error:
+                self._send_html(
+                    self._render_research_helper(
+                        {"imported": 0, "skipped": 0, "errors": [str(error)]},
+                        fields if "fields" in locals() else {},
+                    ),
+                    status=400,
+                )
+            return
 
         if request_path == "/admin/login":
             content_length = int(self.headers.get("Content-Length", "0"))
