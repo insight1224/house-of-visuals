@@ -2,10 +2,13 @@
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import argparse
+import csv
 from datetime import datetime
+from html import escape
 import json
 import os
 import smtplib
+import sqlite3
 import ssl
 from email.message import EmailMessage
 from urllib.parse import parse_qs
@@ -14,6 +17,20 @@ from urllib.parse import parse_qs
 PROJECT_DIR = Path(__file__).resolve().parent
 INQUIRY_DIR = PROJECT_DIR / "inquiries"
 TESTIMONIAL_DIR = PROJECT_DIR / "testimonials"
+DEFAULT_LEAD_STATUSES = ["New", "Contacted", "Interested", "Proposal Sent", "Won", "Lost"]
+VALID_LEAD_STATUSES = set(DEFAULT_LEAD_STATUSES)
+
+DEFAULT_PROSPECT_STATUSES = [
+    "New Prospect",
+    "Needs Review",
+    "Ready to Contact",
+    "Contacted",
+    "Follow-Up Needed",
+    "Interested",
+    "Not Interested",
+    "Converted to Lead",
+]
+VALID_PROSPECT_STATUSES = set(DEFAULT_PROSPECT_STATUSES)
 
 
 def load_env_files():
@@ -31,7 +48,460 @@ def load_env_files():
 load_env_files()
 
 
+def get_database_path():
+    return Path(os.getenv("HOV_DB_PATH", PROJECT_DIR / "leads.db"))
+
+
+def db_connect():
+    connection = sqlite3.connect(get_database_path())
+    connection.row_factory = sqlite3.Row
+    return connection
+
+
+def init_database():
+    with db_connect() as connection:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS businesses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                key TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                notification_email TEXT,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS leads (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                business_id INTEGER NOT NULL,
+                source_form TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'New',
+                internal_notes TEXT NOT NULL DEFAULT '',
+                submitted_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                full_name TEXT,
+                business_name TEXT,
+                email TEXT,
+                phone TEXT,
+                website_social TEXT,
+                project_types TEXT,
+                project_goals TEXT,
+                timeline TEXT,
+                budget TEXT,
+                referral_source TEXT,
+                fields_json TEXT NOT NULL,
+                email_status TEXT NOT NULL DEFAULT 'pending',
+                email_error TEXT,
+                FOREIGN KEY (business_id) REFERENCES businesses(id)
+            )
+            """
+        )
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_leads_business ON leads (business_id)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_leads_status ON leads (status)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_leads_submitted_at ON leads (submitted_at)")
+
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS prospects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                business_name TEXT NOT NULL,
+                contact_name TEXT,
+                industry TEXT,
+                city_state TEXT,
+                website TEXT,
+                instagram TEXT,
+                facebook TEXT,
+                email TEXT,
+                phone TEXT,
+                website_status TEXT,
+                potential_need TEXT,
+                suggested_offer TEXT,
+                recommended_demo TEXT,
+                lead_score INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'New Prospect',
+                notes TEXT NOT NULL DEFAULT '',
+                last_contacted TEXT,
+                next_follow_up TEXT,
+                added_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        columns = [row["name"] for row in connection.execute("PRAGMA table_info(prospects)").fetchall()]
+        if "next_follow_up" not in columns:
+            connection.execute("ALTER TABLE prospects ADD COLUMN next_follow_up TEXT")
+
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects (status)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_prospects_industry ON prospects (industry)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_prospects_added_at ON prospects (added_at)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_prospects_next_follow_up ON prospects (next_follow_up)")
+
+
+def get_business_id():
+    business_key = os.getenv("HOV_BUSINESS_KEY", "house-of-visuals")
+    business_name = os.getenv("HOV_BUSINESS_NAME", "House of Visuals")
+    notification_email = os.getenv("HOV_INQUIRY_TO", "hello@houseofvisualsco.com")
+    now = datetime.now().isoformat(timespec="seconds")
+    with db_connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO businesses (key, name, notification_email, created_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(key) DO UPDATE SET
+                name = excluded.name,
+                notification_email = excluded.notification_email
+            """,
+            (business_key, business_name, notification_email, now),
+        )
+        row = connection.execute("SELECT id FROM businesses WHERE key = ?", (business_key,)).fetchone()
+        return row["id"]
+
+
+def first(fields, name):
+    values = fields.get(name, [])
+    return values[0].strip() if values else ""
+
+
+def first_of(fields, *names):
+    for name in names:
+        value = first(fields, name)
+        if value:
+            return value
+    return ""
+
+
+def many(fields, name):
+    return [value.strip() for value in fields.get(name, []) if value.strip()]
+
+
+def fields_to_plain_dict(fields):
+    return {key: values if len(values) > 1 else values[0] for key, values in fields.items()}
+
+
+def create_lead(fields, source_form="house-of-visuals-contact"):
+    init_database()
+    business_id = get_business_id()
+    now = datetime.now().isoformat(timespec="seconds")
+    project_types = many(fields, "project_type[]")
+    project_goals = many(fields, "project_goal[]")
+    with db_connect() as connection:
+        cursor = connection.execute(
+            """
+            INSERT INTO leads (
+                business_id, source_form, status, internal_notes, submitted_at, updated_at,
+                full_name, business_name, email, phone, website_social, project_types,
+                project_goals, timeline, budget, referral_source, fields_json
+            )
+            VALUES (?, ?, 'New', '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                business_id,
+                source_form,
+                now,
+                now,
+                first(fields, "full_name"),
+                first(fields, "business_name"),
+                first(fields, "email"),
+                first(fields, "phone"),
+                first_of(fields, "website_social_links", "website_social"),
+                json.dumps(project_types),
+                json.dumps(project_goals),
+                first(fields, "timeline"),
+                first(fields, "budget"),
+                first(fields, "referral_source"),
+                json.dumps(fields_to_plain_dict(fields), indent=2),
+            ),
+        )
+        return cursor.lastrowid
+
+
+def update_lead_email_status(lead_id, status, error=""):
+    with db_connect() as connection:
+        connection.execute(
+            "UPDATE leads SET email_status = ?, email_error = ?, updated_at = ? WHERE id = ?",
+            (status, error, datetime.now().isoformat(timespec="seconds"), lead_id),
+        )
+
+
+def row_to_lead(row):
+    lead = dict(row)
+    lead["project_types"] = json.loads(lead.get("project_types") or "[]")
+    lead["project_goals"] = json.loads(lead.get("project_goals") or "[]")
+    lead["fields"] = json.loads(lead.pop("fields_json") or "{}")
+    return lead
+
+
+def get_leads():
+    init_database()
+    with db_connect() as connection:
+        rows = connection.execute(
+            """
+            SELECT leads.*, businesses.name AS owner_business_name
+            FROM leads
+            JOIN businesses ON businesses.id = leads.business_id
+            ORDER BY submitted_at DESC, id DESC
+            """
+        ).fetchall()
+        return [row_to_lead(row) for row in rows]
+
+
+def get_lead(lead_id):
+    init_database()
+    with db_connect() as connection:
+        row = connection.execute(
+            """
+            SELECT leads.*, businesses.name AS owner_business_name
+            FROM leads
+            JOIN businesses ON businesses.id = leads.business_id
+            WHERE leads.id = ?
+            """,
+            (lead_id,),
+        ).fetchone()
+        return row_to_lead(row) if row else None
+
+
+def update_lead(lead_id, status, internal_notes):
+    if status not in VALID_LEAD_STATUSES:
+        raise ValueError("Invalid lead status.")
+    with db_connect() as connection:
+        connection.execute(
+            "UPDATE leads SET status = ?, internal_notes = ?, updated_at = ? WHERE id = ?",
+            (status, internal_notes, datetime.now().isoformat(timespec="seconds"), lead_id),
+        )
+
+
+def create_prospect(fields):
+    init_database()
+    now = datetime.now().isoformat(timespec="seconds")
+    try:
+        lead_score = int(first(fields, "lead_score") or "0")
+    except ValueError:
+        lead_score = 0
+    lead_score = max(0, min(10, lead_score))
+
+    status = first(fields, "status") or "New Prospect"
+    if status not in VALID_PROSPECT_STATUSES:
+        status = "New Prospect"
+
+    with db_connect() as connection:
+        cursor = connection.execute(
+            """
+                        INSERT INTO prospects (
+                business_name, contact_name, industry, city_state, website, instagram,
+                facebook, email, phone, website_status, potential_need, suggested_offer,
+                recommended_demo, lead_score, status, notes, last_contacted, next_follow_up, added_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                first(fields, "business_name") or "Unnamed Business",
+                first(fields, "contact_name"),
+                first(fields, "industry"),
+                first(fields, "city_state"),
+                first(fields, "website"),
+                first(fields, "instagram"),
+                first(fields, "facebook"),
+                first(fields, "email"),
+                first(fields, "phone"),
+                first(fields, "website_status"),
+                first(fields, "potential_need"),
+                first(fields, "suggested_offer"),
+                first(fields, "recommended_demo"),
+                lead_score,
+                status,
+                first(fields, "notes"),
+                first(fields, "last_contacted"),
+                first(fields, "next_follow_up"),
+                now,
+                now,
+            ),
+        )
+        return cursor.lastrowid
+
+
+def get_prospects():
+    init_database()
+    with db_connect() as connection:
+        rows = connection.execute(
+            """
+            SELECT *
+            FROM prospects
+            ORDER BY updated_at DESC, added_at DESC, id DESC
+            """
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def get_prospect(prospect_id):
+    init_database()
+    with db_connect() as connection:
+        row = connection.execute("SELECT * FROM prospects WHERE id = ?", (prospect_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def update_prospect(prospect_id, fields):
+    status = first(fields, "status") or "New Prospect"
+    if status not in VALID_PROSPECT_STATUSES:
+        raise ValueError("Invalid prospect status.")
+
+    try:
+        lead_score = int(first(fields, "lead_score") or "0")
+    except ValueError:
+        lead_score = 0
+    lead_score = max(0, min(10, lead_score))
+
+    with db_connect() as connection:
+        connection.execute(
+            """
+            UPDATE prospects
+            SET business_name = ?, contact_name = ?, industry = ?, city_state = ?,
+                website = ?, instagram = ?, facebook = ?, email = ?, phone = ?,
+                website_status = ?, potential_need = ?, suggested_offer = ?,
+                recommended_demo = ?, lead_score = ?, status = ?, notes = ?,
+                last_contacted = ?, next_follow_up = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                first(fields, "business_name") or "Unnamed Business",
+                first(fields, "contact_name"),
+                first(fields, "industry"),
+                first(fields, "city_state"),
+                first(fields, "website"),
+                first(fields, "instagram"),
+                first(fields, "facebook"),
+                first(fields, "email"),
+                first(fields, "phone"),
+                first(fields, "website_status"),
+                first(fields, "potential_need"),
+                first(fields, "suggested_offer"),
+                first(fields, "recommended_demo"),
+                lead_score,
+                status,
+                first(fields, "notes"),
+                first(fields, "last_contacted"),
+                first(fields, "next_follow_up"),
+                datetime.now().isoformat(timespec="seconds"),
+                prospect_id,
+            ),
+        )
+
+
+def import_prospects_from_csv(csv_text):
+    init_database()
+    imported = 0
+    skipped = 0
+    errors = []
+
+    aliases = {
+        "business": "business_name",
+        "business name": "business_name",
+        "name": "business_name",
+        "contact": "contact_name",
+        "contact name": "contact_name",
+        "owner": "contact_name",
+        "city": "city_state",
+        "location": "city_state",
+        "website status": "website_status",
+        "need": "potential_need",
+        "potential need": "potential_need",
+        "offer": "suggested_offer",
+        "suggested offer": "suggested_offer",
+        "demo": "recommended_demo",
+        "recommended demo": "recommended_demo",
+        "score": "lead_score",
+        "lead score": "lead_score",
+        "follow up": "next_follow_up",
+        "follow-up": "next_follow_up",
+        "next follow up": "next_follow_up",
+        "next_followup": "next_follow_up",
+    }
+
+    required_fields = ["business_name"]
+
+    reader = csv.DictReader(csv_text.splitlines())
+    if not reader.fieldnames:
+        return {"imported": 0, "skipped": 0, "errors": ["CSV needs a header row."]}
+
+    for row_number, row in enumerate(reader, start=2):
+        normalized = {}
+        for key, value in row.items():
+            if key is None:
+                continue
+            clean_key = key.strip().lower()
+            mapped_key = aliases.get(clean_key, clean_key.replace(" ", "_").replace("-", "_"))
+            normalized[mapped_key] = [str(value or "").strip()]
+
+        if not any(first(normalized, field) for field in required_fields):
+            skipped += 1
+            errors.append(f"Row {row_number}: missing business_name.")
+            continue
+
+        try:
+            create_prospect(normalized)
+            imported += 1
+        except Exception as error:
+            skipped += 1
+            errors.append(f"Row {row_number}: {error}")
+
+    return {"imported": imported, "skipped": skipped, "errors": errors[:10]}
+
+
+def generate_outreach_messages(prospect):
+    business_name = prospect.get("business_name") or "your business"
+    contact_name = prospect.get("contact_name") or ""
+    industry = (prospect.get("industry") or "local").lower()
+    website_status = prospect.get("website_status") or "there may be an opportunity to improve your online presence"
+    potential_need = prospect.get("potential_need") or "a stronger website and lead capture process"
+    suggested_offer = prospect.get("suggested_offer") or "a website and lead system"
+    recommended_demo = prospect.get("recommended_demo") or "business demo"
+
+    greeting_name = contact_name.split()[0] if contact_name else "there"
+
+    instagram_dm = f"""Hey {greeting_name}, I came across {business_name} and noticed {website_status.lower()}.
+
+I help {industry} businesses create polished websites, lead capture systems, and simple dashboards so potential clients can view services, submit inquiries, and follow up with less back-and-forth.
+
+I have a {recommended_demo} that shows what this could look like.
+
+Would you like me to send it over?"""
+
+    email_message = f"""Hi {greeting_name},
+
+I came across {business_name} and wanted to reach out with a quick idea.
+
+I noticed {website_status.lower()}, and based on what I saw, there may be an opportunity to improve your online presence with {potential_need.lower()}.
+
+I help {industry} businesses create polished websites, lead capture systems, and simple dashboards that make it easier to turn visitors into real inquiries.
+
+I also have a {recommended_demo} that shows what this type of system could look like for a business like yours.
+
+Would you be open to me sending it over?
+
+Best,
+Ashley
+House of Visuals"""
+
+    follow_up = f"""Hey {greeting_name}, just following up in case you missed my last message.
+
+I thought {business_name} could be a good fit for a polished {suggested_offer.lower()} that helps turn more online visitors into inquiries.
+
+I can send over a quick demo if you would like to see what I mean."""
+
+    return {
+        "instagram_dm": instagram_dm,
+        "email_message": email_message,
+        "follow_up": follow_up,
+    }
+
+
+def generate_outreach_message(prospect):
+    return generate_outreach_messages(prospect)["instagram_dm"]
+
+
 class SiteHandler(SimpleHTTPRequestHandler):
+
     def _send_json(self, payload, status=200):
         data = json.dumps(payload).encode("utf-8")
         self.send_response(status)
@@ -39,6 +509,953 @@ class SiteHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    def _send_html(self, html, status=200):
+        data = html.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _admin_allowed(self):
+        token = os.getenv("HOV_ADMIN_TOKEN", "")
+        is_local_request = self.client_address[0] in {"127.0.0.1", "::1", "localhost"}
+        if not token:
+            return is_local_request
+        query = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+        header_token = self.headers.get("X-Admin-Token", "")
+        return header_token == token or token in query.get("token", [])
+
+    def _send_admin_login_required(self):
+        self._send_html(
+            """
+            <!doctype html>
+            <html lang="en">
+              <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Admin Access Required</title></head>
+              <body style="font-family: system-ui, sans-serif; padding: 2rem;">
+                <h1>Admin Access Required</h1>
+                <p>Add your admin token to the URL as <code>?token=YOUR_TOKEN</code> or send it in the <code>X-Admin-Token</code> header.</p>
+              </body>
+            </html>
+            """,
+            status=403,
+        )
+
+    def _render_prospects_import(self, result=None):
+        result_html = ""
+        if result:
+            errors = "".join(f"<li>{escape(error)}</li>" for error in result.get("errors", []))
+            result_html = f"""
+            <section class="panel">
+              <h2>Import Results</h2>
+              <p><strong>{result.get('imported', 0)}</strong> imported. <strong>{result.get('skipped', 0)}</strong> skipped.</p>
+              {f"<ul>{errors}</ul>" if errors else ""}
+              <a class="btn-small" href="/admin/prospects">View Prospects</a>
+            </section>
+            """
+
+        sample_csv = """business_name,contact_name,industry,city_state,website,instagram,email,phone,website_status,potential_need,suggested_offer,recommended_demo,lead_score,status,next_follow_up
+Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hello@example.com,919-000-0000,No website,Needs booking/inquiry system,Website + lead system,Salon Demo,8,Ready to Contact,2026-06-01"""
+
+        return self._admin_shell(
+            "Import Prospects",
+            f"""
+            <section class="hero detail-hero">
+              <p><a href="/admin/prospects">← Back to Prospects</a></p>
+              <h1>Import Prospects</h1>
+              <p>Paste CSV data from your spreadsheet to add multiple businesses at once.</p>
+            </section>
+
+            {result_html}
+
+            <section class="panel">
+              <h2>Paste CSV</h2>
+              <form method="post" action="/admin/prospects/import">
+                <label>CSV Data
+                  <textarea name="csv_data" rows="12" placeholder="{escape(sample_csv)}"></textarea>
+                </label>
+                <button class="btn" type="submit">Import Prospects</button>
+              </form>
+            </section>
+
+            <section class="panel">
+              <h2>Recommended Columns</h2>
+              <p>Use these headers: <code>business_name, contact_name, industry, city_state, website, instagram, email, phone, website_status, potential_need, suggested_offer, recommended_demo, lead_score, status, next_follow_up</code></p>
+            </section>
+            """,
+        )
+
+    def _render_prospects_dashboard(self):
+        prospects = get_prospects()
+
+        query_params = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+        selected_status = query_params.get("status", [""])[0].strip()
+        selected_industry = query_params.get("industry", [""])[0].strip()
+        search_term = query_params.get("q", [""])[0].strip().lower()
+
+        filtered_prospects = []
+        for prospect in prospects:
+            searchable_text = " ".join(
+                [
+                    str(prospect.get("business_name") or ""),
+                    str(prospect.get("contact_name") or ""),
+                    str(prospect.get("industry") or ""),
+                    str(prospect.get("city_state") or ""),
+                    str(prospect.get("website") or ""),
+                    str(prospect.get("instagram") or ""),
+                    str(prospect.get("email") or ""),
+                    str(prospect.get("phone") or ""),
+                    str(prospect.get("potential_need") or ""),
+                    str(prospect.get("suggested_offer") or ""),
+                    str(prospect.get("recommended_demo") or ""),
+                ]
+            ).lower()
+
+            if selected_status and prospect.get("status") != selected_status:
+                continue
+            if selected_industry and prospect.get("industry") != selected_industry:
+                continue
+            if search_term and search_term not in searchable_text:
+                continue
+
+            filtered_prospects.append(prospect)
+
+        status_counts = {status: 0 for status in DEFAULT_PROSPECT_STATUSES}
+        for prospect in prospects:
+            status_counts[prospect["status"]] = status_counts.get(prospect["status"], 0) + 1
+
+        industries = sorted({p.get("industry") for p in prospects if p.get("industry")})
+
+        today = datetime.now().strftime("%Y-%m-%d")
+        follow_up_due = sum(
+            1 for prospect in prospects
+            if prospect.get("next_follow_up") and prospect.get("next_follow_up") <= today
+        )
+
+        summary_cards = f"""
+            <article><strong>{len(prospects)}</strong><span>Total Prospects</span></article>
+            <article><strong>{status_counts.get('Ready to Contact', 0)}</strong><span>Ready to Contact</span></article>
+            <article><strong>{follow_up_due}</strong><span>Follow-Up Due</span></article>
+            <article><strong>{status_counts.get('Interested', 0)}</strong><span>Interested</span></article>
+        """
+
+        status_options = "<option value=''>All Statuses</option>" + "".join(
+            f"<option value='{escape(status)}' {'selected' if selected_status == status else ''}>{escape(status)}</option>"
+            for status in DEFAULT_PROSPECT_STATUSES
+        )
+
+        industry_options = "<option value=''>All Industries</option>" + "".join(
+            f"<option value='{escape(industry)}' {'selected' if selected_industry == industry else ''}>{escape(industry)}</option>"
+            for industry in industries
+        )
+
+        rows = []
+        for prospect in filtered_prospects:
+            rows.append(
+                f"""
+                <tr>
+                  <td><a href="/admin/prospects/{prospect['id']}">#{prospect['id']}</a></td>
+                  <td>
+                    <strong>{escape(prospect.get('business_name') or 'Unnamed Business')}</strong>
+                    <span class="mobile-muted">{escape(prospect.get('city_state') or '')}</span>
+                  </td>
+                  <td>{escape(prospect.get('industry') or '-')}</td>
+                  <td>{escape(prospect.get('city_state') or '-')}</td>
+                  <td>{escape(prospect.get('website_status') or '-')}</td>
+                  <td>{escape(prospect.get('recommended_demo') or '-')}</td>
+                  <td>{escape(prospect.get('next_follow_up') or '-')}</td>
+                  <td><span class="score-pill">{escape(str(prospect.get('lead_score') or 0))}/10</span></td>
+                  <td><span class="status">{escape(prospect.get('status') or 'New Prospect')}</span></td>
+                  <td><a class="btn-small" href="/admin/prospects/{prospect['id']}">View</a></td>
+                </tr>
+                """
+            )
+
+        empty_state = """
+            <tr>
+              <td colspan="10">
+                <div class="empty-state">
+                  <h3>No prospects yet.</h3>
+                  <p>Add a business you want to reach out to and start building your client-finding pipeline.</p>
+                  <a class="btn-small" href="/admin/prospects/new">Add Prospect</a>
+                </div>
+              </td>
+            </tr>
+        """
+
+        return self._admin_shell(
+            "Prospect Finder",
+            f"""
+            <section class="hero">
+              <p>House of Visuals Client Finder</p>
+              <h1>Prospect Pipeline</h1>
+              <a class="btn" href="/admin/prospects/new">Add New Prospect</a>
+            </section>
+
+            <section class="stats stats-four">{summary_cards}</section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Find + Filter Prospects</h2>
+                  <p>Track businesses you may want to contact.</p>
+                </div>
+                <a class="btn-small" href="/admin/prospects">Reset</a>
+              </div>
+
+              <form class="filters" method="get" action="/admin/prospects">
+                <label>Search
+                  <input type="search" name="q" value="{escape(query_params.get('q', [''])[0])}" placeholder="Business, city, email, need, or demo" />
+                </label>
+
+                <label>Status
+                  <select name="status">{status_options}</select>
+                </label>
+
+                <label>Industry
+                  <select name="industry">{industry_options}</select>
+                </label>
+
+                <button class="btn" type="submit">Apply Filters</button>
+              </form>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>All Prospects</h2>
+                  <p>Showing {len(filtered_prospects)} of {len(prospects)} possible clients</p>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Business</th>
+                      <th>Industry</th>
+                      <th>Location</th>
+                      <th>Website Status</th>
+                      <th>Recommended Demo</th>
+                      <th>Next Follow-Up</th>
+                      <th>Score</th>
+                      <th>Status</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>{''.join(rows) if rows else empty_state}</tbody>
+                </table>
+              </div>
+            </section>
+            """,
+        )
+
+    def _render_prospect_form(self, prospect=None):
+        prospect = prospect or {}
+        is_edit = bool(prospect.get("id"))
+        title = f"Prospect #{prospect['id']}" if is_edit else "Add Prospect"
+        action = f"/admin/prospects/{prospect['id']}" if is_edit else "/admin/prospects/new"
+
+        def value(name):
+            return escape(str(prospect.get(name) or ""))
+
+        status_options = "".join(
+            f"<option value='{escape(status)}' {'selected' if prospect.get('status', 'New Prospect') == status else ''}>{escape(status)}</option>"
+            for status in DEFAULT_PROSPECT_STATUSES
+        )
+
+        return self._admin_shell(
+            title,
+            f"""
+            <section class="hero detail-hero">
+              <p><a href="/admin/prospects">← Back to Prospects</a></p>
+              <h1>{escape(title)}</h1>
+              <p>{'Update this possible client.' if is_edit else 'Add a business you may want to contact.'}</p>
+            </section>
+
+            <form method="post" action="{action}">
+              <section class="detail-grid">
+                <article class="panel">
+                  <h2>Business Info</h2>
+
+                  <label>Business Name
+                    <input name="business_name" value="{value('business_name')}" required />
+                  </label>
+
+                  <label>Contact Name
+                    <input name="contact_name" value="{value('contact_name')}" />
+                  </label>
+
+                  <label>Industry
+                    <input name="industry" value="{value('industry')}" placeholder="Salon, Realtor, Contractor, etc." />
+                  </label>
+
+                  <label>City / State
+                    <input name="city_state" value="{value('city_state')}" placeholder="Durham, NC" />
+                  </label>
+
+                  <label>Website
+                    <input name="website" value="{value('website')}" placeholder="https://..." />
+                  </label>
+
+                  <label>Instagram
+                    <input name="instagram" value="{value('instagram')}" placeholder="@businessname or link" />
+                  </label>
+
+                  <label>Facebook
+                    <input name="facebook" value="{value('facebook')}" />
+                  </label>
+
+                  <label>Email
+                    <input name="email" value="{value('email')}" />
+                  </label>
+
+                  <label>Phone
+                    <input name="phone" value="{value('phone')}" />
+                  </label>
+                </article>
+
+                <article class="panel">
+                  <h2>Opportunity Details</h2>
+
+                  <label>Website Status
+                    <input name="website_status" value="{value('website_status')}" placeholder="No website, outdated, weak contact form..." />
+                  </label>
+
+                  <label>Potential Need
+                    <textarea name="potential_need" rows="5" placeholder="What do they seem to need?">{value('potential_need')}</textarea>
+                  </label>
+
+                  <label>Suggested Offer
+                    <input name="suggested_offer" value="{value('suggested_offer')}" placeholder="Website, lead system, content, branding..." />
+                  </label>
+
+                  <label>Recommended Demo
+                    <input name="recommended_demo" value="{value('recommended_demo')}" placeholder="Salon demo, realtor demo, contractor demo..." />
+                  </label>
+
+                  <div class="score-checklist">
+                    <h3>Lead Score Checklist</h3>
+                    <p>Check what applies. The score will auto-fill below.</p>
+
+                    <label class="check-row">
+                      <input type="checkbox" class="score-check" data-score="3" />
+                      <span>No website or website is missing</span>
+                      <strong>+3</strong>
+                    </label>
+
+                    <label class="check-row">
+                      <input type="checkbox" class="score-check" data-score="2" />
+                      <span>Website looks outdated or unfinished</span>
+                      <strong>+2</strong>
+                    </label>
+
+                    <label class="check-row">
+                      <input type="checkbox" class="score-check" data-score="2" />
+                      <span>No clear contact form, booking button, or inquiry process</span>
+                      <strong>+2</strong>
+                    </label>
+
+                    <label class="check-row">
+                      <input type="checkbox" class="score-check" data-score="1" />
+                      <span>Active Instagram, Facebook, or Google presence</span>
+                      <strong>+1</strong>
+                    </label>
+
+                    <label class="check-row">
+                      <input type="checkbox" class="score-check" data-score="1" />
+                      <span>Good fit for one of your existing demos</span>
+                      <strong>+1</strong>
+                    </label>
+
+                    <label class="check-row">
+                      <input type="checkbox" class="score-check" data-score="1" />
+                      <span>Business appears active and likely to invest</span>
+                      <strong>+1</strong>
+                    </label>
+                  </div>
+
+                  <label>Lead Score 0-10
+                    <input id="lead_score" type="number" min="0" max="10" name="lead_score" value="{escape(str(prospect.get('lead_score', 0)))}" />
+                  </label>
+
+                  <label>Status
+                    <select name="status">{status_options}</select>
+                  </label>
+
+                  <label>Last Contacted
+                    <input type="date" name="last_contacted" value="{value('last_contacted')}" />
+                  </label>
+
+                  <label>Next Follow-Up
+                    <input type="date" name="next_follow_up" value="{value('next_follow_up')}" />
+                  </label>
+
+                  <label>Notes
+                    <textarea name="notes" rows="7">{value('notes')}</textarea>
+                  </label>
+
+                  <button class="btn" type="submit">{'Save Prospect' if is_edit else 'Add Prospect'}</button>
+                </article>
+              </section>
+              {f"""
+              <section class='panel outreach-panel'>
+                <div class='panel-head'>
+                  <div>
+                    <h2>Outreach Message Generator</h2>
+                    <p>Copy the best version for Instagram, email, or follow-up.</p>
+                  </div>
+                </div>
+
+                <div class='message-grid'>
+                  <article class='message-card'>
+                    <h3>Instagram DM</h3>
+                    <p>Shorter and more casual for social media outreach.</p>
+                    <textarea class='outreach-copy' rows='9' readonly>{escape(generate_outreach_messages(prospect)['instagram_dm'])}</textarea>
+                  </article>
+
+                  <article class='message-card'>
+                    <h3>Email Version</h3>
+                    <p>More polished for cold email or contact forms.</p>
+                    <textarea class='outreach-copy' rows='12' readonly>{escape(generate_outreach_messages(prospect)['email_message'])}</textarea>
+                  </article>
+
+                  <article class='message-card'>
+                    <h3>Follow-Up Message</h3>
+                    <p>Use this 2–4 days after the first message.</p>
+                    <textarea class='outreach-copy' rows='7' readonly>{escape(generate_outreach_messages(prospect)['follow_up'])}</textarea>
+                  </article>
+                </div>
+
+                <div class='quick-actions'>
+                  {f"<a class='btn-small' href='mailto:{escape(prospect.get('email') or '')}?subject=Quick idea for {escape(prospect.get('business_name') or 'your business')}&body={escape(generate_outreach_messages(prospect)['email_message'])}'>Open Email</a>" if prospect.get('email') else ""}
+                  {f"<a class='btn-small' href='{escape(prospect.get('website') or '')}' target='_blank' rel='noopener'>Open Website</a>" if prospect.get('website') else ""}
+                  {f"<a class='btn-small' href='{escape(prospect.get('instagram') or '')}' target='_blank' rel='noopener'>Open Instagram</a>" if prospect.get('instagram') and str(prospect.get('instagram')).startswith('http') else ""}
+                </div>
+              </section>
+              """ if is_edit else ""}
+
+            </form>
+            """,
+        )
+
+    def _render_leads_dashboard(self):
+        leads = get_leads()
+
+        query_params = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+        selected_status = query_params.get("status", [""])[0].strip()
+        selected_service = query_params.get("service", [""])[0].strip()
+        search_term = query_params.get("q", [""])[0].strip().lower()
+
+        def lead_service_text(lead):
+            services = lead.get("project_types") or []
+            return ", ".join(services)
+
+        filtered_leads = []
+        for lead in leads:
+            service_text = lead_service_text(lead)
+            searchable_text = " ".join(
+                [
+                    str(lead.get("full_name") or ""),
+                    str(lead.get("business_name") or ""),
+                    str(lead.get("email") or ""),
+                    str(lead.get("phone") or ""),
+                    str(lead.get("timeline") or ""),
+                    str(lead.get("budget") or ""),
+                    service_text,
+                ]
+            ).lower()
+
+            if selected_status and lead.get("status") != selected_status:
+                continue
+
+            if selected_service and selected_service.lower() not in service_text.lower():
+                continue
+
+            if search_term and search_term not in searchable_text:
+                continue
+
+            filtered_leads.append(lead)
+
+        status_counts = {status: 0 for status in DEFAULT_LEAD_STATUSES}
+        for lead in leads:
+            status_counts[lead["status"]] = status_counts.get(lead["status"], 0) + 1
+
+        all_services = sorted(
+            {
+                service
+                for lead in leads
+                for service in (lead.get("project_types") or [])
+                if service
+            }
+        )
+
+        total_leads = len(leads)
+        new_leads = status_counts.get("New", 0)
+        contacted_leads = status_counts.get("Contacted", 0)
+        won_leads = status_counts.get("Won", 0)
+
+        summary_cards = f"""
+            <article><strong>{total_leads}</strong><span>Total Leads</span></article>
+            <article><strong>{new_leads}</strong><span>New Leads</span></article>
+            <article><strong>{contacted_leads}</strong><span>Contacted</span></article>
+            <article><strong>{won_leads}</strong><span>Won Leads</span></article>
+        """
+
+        status_filter_options = "<option value=''>All Statuses</option>" + "".join(
+            f"<option value='{escape(status)}' {'selected' if selected_status == status else ''}>{escape(status)}</option>"
+            for status in DEFAULT_LEAD_STATUSES
+        )
+
+        service_filter_options = "<option value=''>All Services</option>" + "".join(
+            f"<option value='{escape(service)}' {'selected' if selected_service == service else ''}>{escape(service)}</option>"
+            for service in all_services
+        )
+
+        rows = []
+        for lead in filtered_leads:
+            service_text = lead_service_text(lead) or "-"
+            rows.append(
+                f"""
+                <tr>
+                  <td><a href="/admin/leads/{lead['id']}">#{lead['id']}</a></td>
+                  <td>{escape(lead.get('submitted_at') or '')}</td>
+                  <td>
+                    <strong>{escape(lead.get('full_name') or 'Website Lead')}</strong>
+                    <span class="mobile-muted">{escape(lead.get('email') or '')}</span>
+                  </td>
+                  <td>{escape(lead.get('business_name') or '-')}</td>
+                  <td>{escape(lead.get('email') or '-')}</td>
+                  <td>{escape(lead.get('phone') or '-')}</td>
+                  <td>{escape(service_text)}</td>
+                  <td>{escape(lead.get('budget') or '-')}</td>
+                  <td><span class="status status-{escape((lead.get('status') or 'New').lower().replace(' ', '-'))}">{escape(lead.get('status') or 'New')}</span></td>
+                  <td><a class="btn-small" href="/admin/leads/{lead['id']}">View Details</a></td>
+                </tr>
+                """
+            )
+
+        empty_state = """
+            <tr>
+              <td colspan="10">
+                <div class="empty-state">
+                  <h3>No leads match your filters.</h3>
+                  <p>Try clearing your search, choosing another status, or submitting a new test inquiry.</p>
+                  <a class="btn-small" href="/admin/leads">Clear Filters</a>
+                </div>
+              </td>
+            </tr>
+        """
+
+        return self._admin_shell(
+            "Leads Dashboard",
+            f"""
+            <section class="hero">
+              <p>House of Visuals Lead Generator</p>
+              <h1>Leads Dashboard</h1>
+              <a class="btn" href="/contact.html">View Public Form</a>
+            </section>
+
+            <section class="stats stats-four">{summary_cards}</section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Lead Filters</h2>
+                  <p>Search, filter, and track your website inquiries.</p>
+                </div>
+                <a class="btn-small" href="/admin/leads">Reset</a>
+              </div>
+
+              <form class="filters" method="get" action="/admin/leads">
+                <label>Search
+                  <input type="search" name="q" value="{escape(query_params.get('q', [''])[0])}" placeholder="Name, email, phone, or business" />
+                </label>
+
+                <label>Status
+                  <select name="status">{status_filter_options}</select>
+                </label>
+
+                <label>Service
+                  <select name="service">{service_filter_options}</select>
+                </label>
+
+                <button class="btn" type="submit">Apply Filters</button>
+              </form>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>All Leads</h2>
+                  <p>Showing {len(filtered_leads)} of {len(leads)} total submissions</p>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Date Submitted</th>
+                      <th>Name</th>
+                      <th>Business</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Service</th>
+                      <th>Budget</th>
+                      <th>Status</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>{''.join(rows) if rows else empty_state}</tbody>
+                </table>
+              </div>
+            </section>
+            """,
+        )
+
+    def _render_lead_detail(self, lead_id):
+        lead = get_lead(lead_id)
+        if not lead:
+            self._send_html(self._admin_shell("Lead Not Found", "<section class='panel'><h1>Lead not found.</h1><a href='/admin/leads'>Back to leads</a></section>"), status=404)
+            return
+
+        status_options = "".join(
+            f"<option value='{escape(status)}' {'selected' if status == lead['status'] else ''}>{escape(status)}</option>"
+            for status in DEFAULT_LEAD_STATUSES
+        )
+        fields = lead.get("fields", {})
+        field_rows = "".join(
+            f"<dt>{escape(str(key))}</dt><dd>{escape(', '.join(value) if isinstance(value, list) else str(value or '-'))}</dd>"
+            for key, value in fields.items()
+        )
+
+        html = self._admin_shell(
+            f"Lead #{lead['id']}",
+            f"""
+            <section class="hero detail-hero">
+              <p><a href="/admin/leads">← Back to Leads</a></p>
+              <h1>Lead #{lead['id']}: {escape(lead.get('full_name') or 'Website Lead')}</h1>
+              <p>Submitted {escape(lead.get('submitted_at') or '')}</p>
+            </section>
+            <section class="detail-grid">
+              <article class="panel">
+                <h2>Lead Details</h2>
+                <dl class="details">
+                  <dt>Full Name</dt><dd>{escape(lead.get('full_name') or '-')}</dd>
+                  <dt>Business Name</dt><dd>{escape(lead.get('business_name') or '-')}</dd>
+                  <dt>Email</dt><dd>{escape(lead.get('email') or '-')}</dd>
+                  <dt>Phone</dt><dd>{escape(lead.get('phone') or '-')}</dd>
+                  <dt>Website / Social</dt><dd>{escape(lead.get('website_social') or '-')}</dd>
+                  <dt>Project Types</dt><dd>{escape(', '.join(lead.get('project_types') or []) or '-')}</dd>
+                  <dt>Project Goals</dt><dd>{escape(', '.join(lead.get('project_goals') or []) or '-')}</dd>
+                  <dt>Timeline</dt><dd>{escape(lead.get('timeline') or '-')}</dd>
+                  <dt>Budget</dt><dd>{escape(lead.get('budget') or '-')}</dd>
+                  <dt>Referral Source</dt><dd>{escape(lead.get('referral_source') or '-')}</dd>
+                  <dt>Email Status</dt><dd>{escape(lead.get('email_status') or '-')}</dd>
+                </dl>
+              </article>
+              <article class="panel">
+                <h2>Status + Internal Notes</h2>
+                <form method="post" action="/admin/leads/{lead['id']}">
+                  <label>Status
+                    <select name="status">{status_options}</select>
+                  </label>
+                  <label>Internal Notes
+                    <textarea name="internal_notes" rows="10">{escape(lead.get('internal_notes') or '')}</textarea>
+                  </label>
+                  <button class="btn" type="submit">Save Lead</button>
+                </form>
+              </article>
+            </section>
+            <section class="panel">
+              <h2>Full Submission</h2>
+              <dl class="details full-fields">{field_rows}</dl>
+            </section>
+            """,
+        )
+        self._send_html(html)
+
+    def _admin_shell(self, title, body):
+        return f"""
+        <!doctype html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <meta name="robots" content="noindex, nofollow" />
+            <title>{escape(title)} | House of Visuals Admin</title>
+            <style>
+              :root {{
+                --bg: #080c09;
+                --panel: #ffffff;
+                --ink: #142119;
+                --muted: #516257;
+                --green: #0f4a33;
+                --gold: #c9a24f;
+                --cream: #f7f1e4;
+                --line: rgba(15, 74, 51, 0.16);
+              }}
+              * {{ box-sizing: border-box; }}
+              body {{
+                margin: 0;
+                font-family: Manrope, Inter, system-ui, sans-serif;
+                color: var(--ink);
+                background: linear-gradient(160deg, #f8f4eb, #eef7f0);
+              }}
+              a {{ color: inherit; }}
+              .wrap {{ width: min(100% - 2rem, 1180px); margin: 0 auto; padding: 1.2rem 0 3rem; }}
+              .hero {{
+                border-radius: 18px;
+                background: linear-gradient(145deg, #0b130f, #123b2b);
+                color: var(--cream);
+                padding: clamp(1rem, 3vw, 1.6rem);
+                margin-bottom: 1rem;
+                border: 1px solid rgba(201, 162, 79, 0.3);
+              }}
+              .hero p {{ color: #ead7a7; margin: 0 0 0.45rem; }}
+              .hero h1 {{ margin: 0; font-family: Georgia, serif; font-size: clamp(2rem, 5vw, 3.3rem); line-height: 1.05; }}
+              .btn, .btn-small {{
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border: 0;
+                border-radius: 999px;
+                background: linear-gradient(135deg, #1f7a57, #29a16f);
+                color: #fff;
+                font-weight: 800;
+                text-decoration: none;
+                cursor: pointer;
+              }}
+              .btn {{ min-height: 44px; padding: 0.75rem 1.05rem; margin-top: 1rem; }}
+              .btn-small {{ min-height: 34px; padding: 0.45rem 0.75rem; font-size: 0.86rem; }}
+              .admin-nav {{
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.6rem;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 1rem;
+                padding: 0.75rem 0;
+              }}
+              .admin-nav strong {{
+                color: var(--green);
+                font-family: Georgia, serif;
+                font-size: 1.15rem;
+              }}
+              .admin-nav div {{
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+              }}
+              .admin-nav a {{
+                border: 1px solid rgba(15, 74, 51, 0.18);
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.75);
+                color: var(--green);
+                font-weight: 900;
+                padding: 0.5rem 0.75rem;
+                text-decoration: none;
+              }}
+              .score-pill {{
+                display: inline-flex;
+                padding: 0.28rem 0.55rem;
+                border-radius: 999px;
+                background: #fff7df;
+                color: #7a5818;
+                font-weight: 900;
+              }}
+              .outreach-panel {{
+                margin-top: 1rem;
+              }}
+              .outreach-copy {{
+                min-height: 220px;
+                line-height: 1.55;
+                background: #fffdf7;
+              }}
+              .quick-actions {{
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.65rem;
+                margin-top: 0.85rem;
+              }}
+              .message-grid {{
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 1rem;
+              }}
+              .message-card {{
+                border: 1px solid rgba(15, 74, 51, 0.14);
+                border-radius: 16px;
+                background: rgba(255, 255, 255, 0.75);
+                padding: 1rem;
+              }}
+              .message-card h3 {{
+                margin: 0 0 0.35rem;
+                font-family: Georgia, serif;
+                font-size: 1.2rem;
+                color: var(--green);
+              }}
+              .message-card p {{
+                margin: 0 0 0.75rem;
+                color: var(--muted);
+              }}
+              .score-checklist {{
+                border: 1px solid rgba(15, 74, 51, 0.14);
+                border-radius: 16px;
+                background: #fffdf7;
+                padding: 1rem;
+                margin-bottom: 0.85rem;
+              }}
+              .score-checklist h3 {{
+                margin: 0 0 0.35rem;
+                font-family: Georgia, serif;
+                font-size: 1.2rem;
+                color: var(--green);
+              }}
+              .score-checklist p {{
+                margin: 0 0 0.85rem;
+                color: var(--muted);
+              }}
+              .check-row {{
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                align-items: center;
+                gap: 0.65rem;
+                margin: 0;
+                padding: 0.6rem 0;
+                border-top: 1px solid rgba(15, 74, 51, 0.1);
+                color: var(--ink);
+                font-weight: 800;
+              }}
+              .check-row input {{
+                width: auto;
+                transform: scale(1.1);
+              }}
+              .check-row strong {{
+                color: var(--green);
+              }}
+              .stats {{ display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }}
+.stats-four {{ grid-template-columns: repeat(4, minmax(0, 1fr)); }}
+              .stats article, .panel {{
+                border: 1px solid var(--line);
+                border-radius: 16px;
+                background: rgba(255, 255, 255, 0.94);
+                box-shadow: 0 14px 24px rgba(13, 32, 23, 0.08);
+              }}
+              .stats article {{ padding: 0.85rem; }}
+              .stats strong {{ display: block; font-size: 1.7rem; color: var(--green); }}
+              .stats span {{ color: var(--muted); font-weight: 800; font-size: 0.86rem; }}
+              .panel {{ padding: 1rem; margin-bottom: 1rem; }}
+              .panel-head {{ display: flex; justify-content: space-between; gap: 1rem; align-items: end; margin-bottom: 0.75rem; }}
+              .panel h2 {{ margin: 0 0 0.75rem; font-family: Georgia, serif; font-size: 1.45rem; }}
+              .panel p {{ color: var(--muted); margin: 0; }}
+              .table-wrap {{ overflow-x: auto; }}
+              table {{ width: 100%; border-collapse: collapse; min-width: 760px; }}
+              th, td {{ padding: 0.72rem; text-align: left; border-bottom: 1px solid rgba(15, 74, 51, 0.12); vertical-align: top; }}
+              th {{ color: var(--green); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }}
+              .status {{ display: inline-flex; padding: 0.28rem 0.55rem; border-radius: 999px; background: #edf6f0; color: var(--green); font-weight: 800; }}
+              .detail-grid {{ display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 1rem; }}
+              .details {{ display: grid; grid-template-columns: minmax(120px, 0.45fr) 1fr; gap: 0.55rem 0.8rem; margin: 0; }}
+              .details dt {{ color: var(--muted); font-weight: 800; }}
+              .details dd {{ margin: 0; overflow-wrap: anywhere; }}
+              .full-fields {{ grid-template-columns: minmax(150px, 0.35fr) 1fr; }}
+              label {{ display: grid; gap: 0.4rem; font-weight: 800; color: var(--green); margin-bottom: 0.85rem; }}
+             select, textarea, input {{
+                width: 100%;
+                border: 1px solid rgba(15, 74, 51, 0.22);
+                border-radius: 12px;
+                padding: 0.7rem;
+                font: inherit;
+                color: var(--ink);
+                background: #fff;
+              }}
+.filters {{
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr auto;
+  gap: 0.75rem;
+  align-items: end;
+}}
+
+.filters label {{
+  margin-bottom: 0;
+}}
+
+.filters .btn {{
+  margin-top: 0;
+  min-width: 140px;
+}}
+
+.mobile-muted {{
+  display: none;
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 0.15rem;
+}}
+
+.empty-state {{
+  text-align: center;
+  padding: 2rem 1rem;
+}}
+
+.empty-state h3 {{
+  margin: 0 0 0.4rem;
+  font-family: Georgia, serif;
+  font-size: 1.4rem;
+}}
+
+.empty-state p {{
+  margin-bottom: 1rem;
+}}
+              @media (max-width: 850px) {{
+                .wrap {{ width: min(100% - 1rem, 1180px); }}
+                .stats, .stats-four, .detail-grid, .filters, .message-grid {{ grid-template-columns: 1fr; }}
+                .panel-head {{ display: block; }}
+                .details, .full-fields {{ grid-template-columns: 1fr; }}
+                .btn {{ width: 100%; }}
+		.mobile-muted {{ display: block; }}
+              }}
+            </style>
+          </head>
+          <body>
+            <main class="wrap">
+              <nav class="admin-nav">
+                <strong>House of Visuals Admin</strong>
+                <div>
+                  <a href="/admin">Leads</a>
+                  <a href="/admin/prospects">Prospects</a>
+                  <a href="/admin/prospects/new">Add Prospect</a>
+                  <a href="/admin/prospects/import">Import</a>
+                </div>
+              </nav>
+              {body}
+            </main>
+            <script>
+              document.addEventListener("DOMContentLoaded", function () {{
+                const checks = Array.from(document.querySelectorAll(".score-check"));
+                const scoreInput = document.getElementById("lead_score");
+
+                if (!checks.length || !scoreInput) return;
+
+                function updateScore() {{
+                  const total = checks.reduce(function (sum, checkbox) {{
+                    return sum + (checkbox.checked ? Number(checkbox.dataset.score || 0) : 0);
+                  }}, 0);
+
+                  scoreInput.value = Math.min(10, total);
+                }}
+
+                checks.forEach(function (checkbox) {{
+                  checkbox.addEventListener("change", updateScore);
+                }});
+              }});
+            </script>
+          </body>
+        </html>
+        """
 
     def _save_inquiry_locally(self, fields, reason):
         INQUIRY_DIR.mkdir(exist_ok=True)
@@ -233,7 +1650,79 @@ class SiteHandler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         request_path = self.path.split("?", 1)[0]
-        if request_path not in {"/api/inquiry", "/api/testimonial"}:
+
+        if request_path == "/admin/prospects/import":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", "0"))
+                raw = self.rfile.read(content_length).decode("utf-8", errors="replace")
+                fields = parse_qs(raw, keep_blank_values=True)
+                result = import_prospects_from_csv(first(fields, "csv_data"))
+                self._send_html(self._render_prospects_import(result))
+            except Exception as error:
+                self._send_json({"ok": False, "message": str(error)}, status=400)
+            return
+
+        if request_path == "/admin/prospects/import":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._send_html(self._render_prospects_import())
+            return
+
+        if request_path == "/admin/prospects/new":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", "0"))
+                raw = self.rfile.read(content_length).decode("utf-8", errors="replace")
+                fields = parse_qs(raw, keep_blank_values=True)
+                prospect_id = create_prospect(fields)
+                self.send_response(303)
+                self.send_header("Location", f"/admin/prospects/{prospect_id}")
+                self.end_headers()
+            except Exception as error:
+                self._send_json({"ok": False, "message": str(error)}, status=400)
+            return
+
+        if request_path.startswith("/admin/prospects/"):
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                prospect_id = int(request_path.rstrip("/").rsplit("/", 1)[-1])
+                content_length = int(self.headers.get("Content-Length", "0"))
+                raw = self.rfile.read(content_length).decode("utf-8", errors="replace")
+                fields = parse_qs(raw, keep_blank_values=True)
+                update_prospect(prospect_id, fields)
+                self.send_response(303)
+                self.send_header("Location", f"/admin/prospects/{prospect_id}")
+                self.end_headers()
+            except Exception as error:
+                self._send_json({"ok": False, "message": str(error)}, status=400)
+            return
+
+        if request_path.startswith("/admin/leads/"):
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                lead_id = int(request_path.rstrip("/").rsplit("/", 1)[-1])
+                content_length = int(self.headers.get("Content-Length", "0"))
+                raw = self.rfile.read(content_length).decode("utf-8", errors="replace")
+                fields = parse_qs(raw, keep_blank_values=True)
+                update_lead(lead_id, first(fields, "status"), first(fields, "internal_notes"))
+                self.send_response(303)
+                self.send_header("Location", f"/admin/leads/{lead_id}")
+                self.end_headers()
+            except Exception as error:
+                self._send_json({"ok": False, "message": str(error)}, status=400)
+            return
+
+        if request_path not in {"/api/inquiry", "/api/testimonial", "/api/leads/update"}:
             self._send_json({"ok": False, "message": "Not found."}, status=404)
             return
 
@@ -250,6 +1739,15 @@ class SiteHandler(SimpleHTTPRequestHandler):
             content_length = int(self.headers.get("Content-Length", "0"))
             raw = self.rfile.read(content_length).decode("utf-8", errors="replace")
             fields = parse_qs(raw, keep_blank_values=True)
+            if request_path == "/api/leads/update":
+                if not self._admin_allowed():
+                    self._send_json({"ok": False, "message": "Admin access required."}, status=403)
+                    return
+                lead_id = int(first(fields, "lead_id"))
+                update_lead(lead_id, first(fields, "status"), first(fields, "internal_notes"))
+                self._send_json({"ok": True, "message": "Lead updated successfully."}, status=200)
+                return
+
             if request_path == "/api/testimonial":
                 self._send_testimonial_email(fields)
                 self._send_json(
@@ -261,9 +1759,17 @@ class SiteHandler(SimpleHTTPRequestHandler):
                 )
                 return
 
+            lead_id = create_lead(fields)
             self._send_inquiry_email(fields)
-            self._send_json({"ok": True, "message": "Inquiry sent successfully."}, status=200)
+            update_lead_email_status(lead_id, "sent")
+            self._send_json(
+                {"ok": True, "message": "Inquiry sent successfully.", "lead_id": lead_id},
+                status=200,
+            )
         except Exception as error:
+            if request_path == "/api/inquiry" and "lead_id" in locals():
+                update_lead_email_status(lead_id, "failed", str(error))
+
             if "Missing email env vars" in str(error):
                 if request_path == "/api/testimonial":
                     output_path = self._save_testimonial_locally(fields, str(error))
@@ -278,11 +1784,13 @@ class SiteHandler(SimpleHTTPRequestHandler):
                     return
 
                 output_path = self._save_inquiry_locally(fields, str(error))
+                saved_lead_id = locals().get("lead_id")
                 self._send_json(
                     {
                         "ok": True,
-                        "message": "Inquiry saved locally. Email delivery still needs to be configured before launch.",
+                        "message": "Inquiry saved as a lead. Email delivery still needs to be configured.",
                         "saved_to": str(output_path),
+                        "lead_id": saved_lead_id,
                     },
                     status=200,
                 )
@@ -301,6 +1809,85 @@ class SiteHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         request_path = self.path.split("?", 1)[0]
+
+        if request_path in {"/admin/prospects", "/admin/prospects/"}:
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._send_html(self._render_prospects_dashboard())
+            return
+
+        if request_path == "/admin/prospects/import":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._send_html(self._render_prospects_import())
+            return
+
+        if request_path == "/admin/prospects/new":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._send_html(self._render_prospect_form())
+            return
+
+        if request_path.startswith("/admin/prospects/"):
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                prospect_id = int(request_path.rstrip("/").rsplit("/", 1)[-1])
+            except ValueError:
+                self._send_html(self._admin_shell("Invalid Prospect", "<section class='panel'><h1>Invalid prospect id.</h1></section>"), status=400)
+                return
+            prospect = get_prospect(prospect_id)
+            if not prospect:
+                self._send_html(self._admin_shell("Prospect Not Found", "<section class='panel'><h1>Prospect not found.</h1><a href='/admin/prospects'>Back to prospects</a></section>"), status=404)
+                return
+            self._send_html(self._render_prospect_form(prospect))
+            return
+
+        if request_path == "/api/leads":
+            if not self._admin_allowed():
+                self._send_json({"ok": False, "message": "Admin access required."}, status=403)
+                return
+            self._send_json({"ok": True, "leads": get_leads(), "statuses": DEFAULT_LEAD_STATUSES}, status=200)
+            return
+
+        if request_path.startswith("/api/leads/"):
+            if not self._admin_allowed():
+                self._send_json({"ok": False, "message": "Admin access required."}, status=403)
+                return
+            try:
+                lead_id = int(request_path.rstrip("/").rsplit("/", 1)[-1])
+            except ValueError:
+                self._send_json({"ok": False, "message": "Invalid lead id."}, status=400)
+                return
+            lead = get_lead(lead_id)
+            if not lead:
+                self._send_json({"ok": False, "message": "Lead not found."}, status=404)
+                return
+            self._send_json({"ok": True, "lead": lead, "statuses": DEFAULT_LEAD_STATUSES}, status=200)
+            return
+
+        if request_path in {"/admin", "/admin/", "/admin/leads", "/admin/leads/"}:
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._send_html(self._render_leads_dashboard())
+            return
+
+        if request_path.startswith("/admin/leads/"):
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                lead_id = int(request_path.rstrip("/").rsplit("/", 1)[-1])
+            except ValueError:
+                self._send_html(self._admin_shell("Invalid Lead", "<section class='panel'><h1>Invalid lead id.</h1></section>"), status=400)
+                return
+            self._render_lead_detail(lead_id)
+            return
 
         # Common convenience routes.
         if request_path in {"/", ""}:
@@ -342,6 +1929,7 @@ def main():
     args = parser.parse_args()
 
     os.chdir(PROJECT_DIR)
+    init_database()
 
     server = ThreadingHTTPServer((args.host, args.port), SiteHandler)
     print(f"Serving House of Visuals at http://{args.host}:{args.port}")
