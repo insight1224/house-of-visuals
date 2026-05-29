@@ -9,6 +9,7 @@ from datetime import datetime
 from html import escape
 import json
 import os
+import re
 import smtplib
 import sqlite3
 import ssl
@@ -124,6 +125,8 @@ def init_database():
                 suggested_offer TEXT,
                 recommended_demo TEXT,
                 lead_score INTEGER NOT NULL DEFAULT 0,
+                review_priority TEXT NOT NULL DEFAULT 'Manual Review',
+                why_this_prospect TEXT NOT NULL DEFAULT '',
                 status TEXT NOT NULL DEFAULT 'New Prospect',
                 notes TEXT NOT NULL DEFAULT '',
                 last_contacted TEXT,
@@ -136,6 +139,10 @@ def init_database():
         columns = [row["name"] for row in connection.execute("PRAGMA table_info(prospects)").fetchall()]
         if "next_follow_up" not in columns:
             connection.execute("ALTER TABLE prospects ADD COLUMN next_follow_up TEXT")
+        if "review_priority" not in columns:
+            connection.execute("ALTER TABLE prospects ADD COLUMN review_priority TEXT NOT NULL DEFAULT 'Manual Review'")
+        if "why_this_prospect" not in columns:
+            connection.execute("ALTER TABLE prospects ADD COLUMN why_this_prospect TEXT NOT NULL DEFAULT ''")
 
         connection.execute("CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects (status)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_prospects_industry ON prospects (industry)")
@@ -308,9 +315,9 @@ def create_prospect(fields):
                         INSERT INTO prospects (
                 business_name, contact_name, industry, city_state, website, instagram,
                 facebook, email, phone, website_status, potential_need, suggested_offer,
-                recommended_demo, lead_score, status, notes, last_contacted, next_follow_up, added_at, updated_at
+                recommended_demo, lead_score, review_priority, why_this_prospect, status, notes, last_contacted, next_follow_up, added_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 first(fields, "business_name") or "Unnamed Business",
@@ -327,6 +334,8 @@ def create_prospect(fields):
                 first(fields, "suggested_offer"),
                 first(fields, "recommended_demo"),
                 lead_score,
+                first(fields, "review_priority") or "Manual Review",
+                first(fields, "why_this_prospect"),
                 status,
                 first(fields, "notes"),
                 first(fields, "last_contacted"),
@@ -376,8 +385,8 @@ def update_prospect(prospect_id, fields):
             SET business_name = ?, contact_name = ?, industry = ?, city_state = ?,
                 website = ?, instagram = ?, facebook = ?, email = ?, phone = ?,
                 website_status = ?, potential_need = ?, suggested_offer = ?,
-                recommended_demo = ?, lead_score = ?, status = ?, notes = ?,
-                last_contacted = ?, next_follow_up = ?, updated_at = ?
+                recommended_demo = ?, lead_score = ?, review_priority = ?, why_this_prospect = ?,
+                status = ?, notes = ?, last_contacted = ?, next_follow_up = ?, updated_at = ?
             WHERE id = ?
             """,
             (
@@ -395,6 +404,8 @@ def update_prospect(prospect_id, fields):
                 first(fields, "suggested_offer"),
                 first(fields, "recommended_demo"),
                 lead_score,
+                first(fields, "review_priority") or "Manual Review",
+                first(fields, "why_this_prospect"),
                 status,
                 first(fields, "notes"),
                 first(fields, "last_contacted"),
@@ -405,32 +416,55 @@ def update_prospect(prospect_id, fields):
         )
 
 
-def prospect_already_exists(business_name, website="", phone=""):
+def normalize_prospect_text(value):
+    return re.sub(r"[^a-z0-9]+", "", (value or "").lower())
+
+
+def normalize_phone(value):
+    return re.sub(r"\D+", "", value or "")
+
+
+def normalize_website(value):
+    value = (value or "").strip().lower()
+    value = value.replace("https://", "").replace("http://", "").replace("www.", "")
+    return value.rstrip("/")
+
+
+def prospect_already_exists(business_name, website="", phone="", city_state=""):
     init_database()
-    conditions = []
-    values = []
 
-    if business_name:
-        conditions.append("LOWER(business_name) = LOWER(?)")
-        values.append(business_name)
-
-    if website:
-        conditions.append("website = ?")
-        values.append(website)
-
-    if phone:
-        conditions.append("phone = ?")
-        values.append(phone)
-
-    if not conditions:
-        return False
+    incoming_name = normalize_prospect_text(business_name)
+    incoming_website = normalize_website(website)
+    incoming_phone = normalize_phone(phone)
+    incoming_city = normalize_prospect_text((city_state or "").split(",")[0])
 
     with db_connect() as connection:
-        row = connection.execute(
-            f"SELECT id FROM prospects WHERE {' OR '.join(conditions)} LIMIT 1",
-            values,
-        ).fetchone()
-        return bool(row)
+        rows = connection.execute(
+            "SELECT id, business_name, website, phone, city_state FROM prospects"
+        ).fetchall()
+
+    for row in rows:
+        existing_name = normalize_prospect_text(row["business_name"])
+        existing_website = normalize_website(row["website"])
+        existing_phone = normalize_phone(row["phone"])
+        existing_city = normalize_prospect_text((row["city_state"] or "").split(",")[0])
+
+        if incoming_phone and existing_phone and incoming_phone == existing_phone:
+            return True
+
+        if incoming_website and existing_website and incoming_website == existing_website:
+            return True
+
+        same_name = incoming_name and existing_name and incoming_name == existing_name
+        same_city = incoming_city and existing_city and incoming_city == existing_city
+
+        if same_name and same_city:
+            return True
+
+        if same_name and not incoming_city:
+            return True
+
+    return False
 
 
 def search_google_places_text(search_query, max_results=10):
@@ -573,33 +607,53 @@ def place_to_prospect_fields(place, industry, suggested_offer, recommended_demo)
     website_issues = website_check.get("issues", [])
 
     lead_score = 2
+    why_reasons = []
 
     if not has_website:
         lead_score += 6
+        why_reasons.append("No website listed")
     else:
         if not website_check.get("loads"):
             lead_score += 6
+            why_reasons.append("Website did not load cleanly")
         if not website_check.get("uses_https"):
             lead_score += 1
+            why_reasons.append("Website may not be using HTTPS")
         if not website_check.get("has_mobile_viewport"):
             lead_score += 2
+            why_reasons.append("No mobile viewport detected")
         if not website_check.get("has_booking_signal"):
             lead_score += 2
+            why_reasons.append("No clear booking or appointment signal detected")
         if not website_check.get("has_form_signal"):
             lead_score += 1
+            why_reasons.append("No clear form or inquiry signal detected")
         if website_check.get("thin_content"):
             lead_score += 1
+            why_reasons.append("Website may have thin or limited content")
 
     if phone:
         lead_score += 1
+        why_reasons.append("Phone number listed")
 
     if rating or review_count:
         lead_score += 1
+        why_reasons.append("Has Google review activity")
 
     if recommended_demo:
         lead_score += 1
+        why_reasons.append(f"Good fit for {recommended_demo}")
 
     lead_score = max(0, min(10, lead_score))
+
+    if lead_score >= 8:
+        review_priority = "High Priority"
+    elif lead_score >= 6:
+        review_priority = "Medium Priority"
+    elif lead_score >= 4:
+        review_priority = "Low Priority"
+    else:
+        review_priority = "Manual Review"
 
     if not has_website:
         website_status = "No website listed - high priority"
@@ -613,6 +667,9 @@ def place_to_prospect_fields(place, industry, suggested_offer, recommended_demo)
     else:
         website_status = "Website listed - lower priority, manual review"
         potential_need = "Website is listed. Manually review design quality, booking/inquiry process, lead capture, service clarity, and overall user experience."
+
+    if not why_reasons:
+        why_reasons.append("Imported for manual review")
 
     notes = [
         "Imported by Google Places Research Bot.",
@@ -639,8 +696,10 @@ def place_to_prospect_fields(place, industry, suggested_offer, recommended_demo)
         "suggested_offer": [suggested_offer],
         "recommended_demo": [recommended_demo],
         "lead_score": [str(lead_score)],
+        "review_priority": [review_priority],
+        "why_this_prospect": ["\n".join(why_reasons)],
         "status": ["Needs Review"],
-        "notes": [chr(10).join(notes)],
+        "notes": ["\n".join(notes)],
         "last_contacted": [""],
         "next_follow_up": [""],
     }
@@ -693,7 +752,7 @@ def import_places_as_prospects(
             skipped += 1
             continue
 
-        if prospect_already_exists(business_name, website, phone):
+        if prospect_already_exists(business_name, website, phone, first(fields, "city_state")):
             skipped += 1
             continue
 
@@ -1331,9 +1390,11 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
         rows = []
         for prospect in filtered_prospects:
+            row_class = "followup-due" if prospect.get("next_follow_up") and prospect.get("next_follow_up") <= today else ""
+            priority_class = (prospect.get("review_priority") or "Manual Review").lower().replace(" ", "-")
             rows.append(
                 f"""
-                <tr>
+                <tr class="{row_class}">
                   <td><a href="/admin/prospects/{prospect['id']}">#{prospect['id']}</a></td>
                   <td>
                     <strong>{escape(prospect.get('business_name') or 'Unnamed Business')}</strong>
@@ -1344,6 +1405,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                   <td>{escape(prospect.get('website_status') or '-')}</td>
                   <td>{escape(prospect.get('recommended_demo') or '-')}</td>
                   <td>{escape(prospect.get('next_follow_up') or '-')}</td>
+                  <td><span class="priority-pill priority-{priority_class}">{escape(prospect.get('review_priority') or 'Manual Review')}</span></td>
                   <td><span class="score-pill">{escape(str(prospect.get('lead_score') or 0))}/10</span></td>
                   <td><span class="status">{escape(prospect.get('status') or 'New Prospect')}</span></td>
                   <td><a class="btn-small" href="/admin/prospects/{prospect['id']}">View</a></td>
@@ -1353,7 +1415,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
         empty_state = """
             <tr>
-              <td colspan="10">
+              <td colspan="11">
                 <div class="empty-state">
                   <h3>No prospects yet.</h3>
                   <p>Add a business you want to reach out to and start building your client-finding pipeline.</p>
@@ -1419,6 +1481,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                       <th>Website Status</th>
                       <th>Recommended Demo</th>
                       <th>Next Follow-Up</th>
+                      <th>Priority</th>
                       <th>Score</th>
                       <th>Status</th>
                       <th></th>
@@ -1558,6 +1621,19 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
                   <label>Lead Score 0-10
                     <input id="lead_score" type="number" min="0" max="10" name="lead_score" value="{escape(str(prospect.get('lead_score', 0)))}" />
+                  </label>
+
+                  <label>Review Priority
+                    <select name="review_priority">
+                      <option value="High Priority" {'selected' if prospect.get('review_priority') == 'High Priority' else ''}>High Priority</option>
+                      <option value="Medium Priority" {'selected' if prospect.get('review_priority') == 'Medium Priority' else ''}>Medium Priority</option>
+                      <option value="Low Priority" {'selected' if prospect.get('review_priority') == 'Low Priority' else ''}>Low Priority</option>
+                      <option value="Manual Review" {'selected' if prospect.get('review_priority', 'Manual Review') == 'Manual Review' else ''}>Manual Review</option>
+                    </select>
+                  </label>
+
+                  <label>Why This Prospect
+                    <textarea name="why_this_prospect" rows="5">{value('why_this_prospect')}</textarea>
                   </label>
 
                   <label>Status
@@ -1964,6 +2040,36 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 background: #fff7df;
                 color: #7a5818;
                 font-weight: 900;
+              }}
+              .priority-pill {{
+                display: inline-flex;
+                padding: 0.28rem 0.55rem;
+                border-radius: 999px;
+                font-weight: 900;
+                background: #edf6f0;
+                color: var(--green);
+              }}
+              .priority-high-priority {{
+                background: #fff1ed;
+                color: #8a2d1f;
+              }}
+              .priority-medium-priority {{
+                background: #fff7df;
+                color: #7a5818;
+              }}
+              .priority-low-priority {{
+                background: #edf6f0;
+                color: var(--green);
+              }}
+              .priority-manual-review {{
+                background: #eef1f4;
+                color: #41505a;
+              }}
+              tr.followup-due td {{
+                background: #fff9e8;
+              }}
+              tr.followup-due td:first-child {{
+                border-left: 4px solid var(--gold);
               }}
               .outreach-panel {{
                 margin-top: 1rem;
