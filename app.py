@@ -2263,6 +2263,60 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
         )
         self._send_html(html)
 
+    def _render_client_previews(self):
+        html = self._admin_shell(
+            "Client Previews",
+            """
+            <section class="hero">
+              <p>House of Visuals Admin</p>
+              <h1>Client Previews</h1>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Active Client Preview Links</h2>
+                  <p>Use this area to manage and quickly access private client review pages.</p>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Client</th>
+                      <th>Status</th>
+                      <th>Preview</th>
+                      <th>Demo</th>
+                      <th>Feedback</th>
+                      <th>Review Call</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Creative Impressions Media</strong><br><span class="mobile-muted">Website preview</span></td>
+                      <td><span class="status">In Review</span></td>
+                      <td><a class="btn-small" href="/client-preview/creative-impressions" target="_blank" rel="noopener">Open Preview</a></td>
+                      <td><a class="btn-small" href="/client-preview/creative-impressions/demo/" target="_blank" rel="noopener">Open Demo</a></td>
+                      <td><a class="btn-small" href="/client-preview/creative-impressions/feedback" target="_blank" rel="noopener">Open Form</a></td>
+                      <td><a class="btn-small" href="https://calendar.app.google/kkKWCQk94dLb3psH8" target="_blank" rel="noopener">Booking Link</a></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Jukebox Lounge NC</strong><br><span class="mobile-muted">Website / dashboard preview</span></td>
+                      <td><span class="status">Coming Soon</span></td>
+                      <td><span class="mobile-muted">Not added yet</span></td>
+                      <td><span class="mobile-muted">Not added yet</span></td>
+                      <td><span class="mobile-muted">Not added yet</span></td>
+                      <td><a class="btn-small" href="https://calendar.app.google/kkKWCQk94dLb3psH8" target="_blank" rel="noopener">Booking Link</a></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            """,
+        )
+        self._send_html(html)
+
     def _admin_shell(self, title, body):
         return f"""
         <!doctype html>
@@ -2597,6 +2651,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                   <a href="/admin">Leads</a>
                   <a href="/admin/prospects">Prospects</a>
                   <a href="/admin/completed">Completed</a>
+                  <a href="/admin/client-previews">Client Previews</a>
                   <a href="/admin/prospects/new">Add Prospect</a>
                   <a href="/admin/research">Research Helper</a>
                   <a href="/admin/prospects/import">Import</a>
@@ -3184,6 +3239,13 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             self._send_html(self._render_research_helper())
             return
 
+        if request_path in {"/admin/client-previews", "/admin/client-previews/"}:
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._render_client_previews()
+            return
+
         if request_path == "/admin/login":
             self._send_admin_login_required(status=200)
             return
@@ -3302,6 +3364,15 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             self._render_lead_detail(lead_id)
             return
 
+        if request_path in {"/client-preview/jukebox-lounge", "/client-preview/jukebox-lounge/"}:
+            self.path = "/client-preview-jukebox-lounge.html"
+
+        if request_path in {"/client-preview/jukebox-lounge/feedback", "/client-preview/jukebox-lounge/feedback/"}:
+            self.path = "/client-preview-jukebox-lounge-feedback.html"
+
+        if request_path in {"/client-preview/jukebox-lounge/thank-you", "/client-preview/jukebox-lounge/thank-you/"}:
+            self.path = "/client-preview-jukebox-lounge-thank-you.html"
+
         if request_path in {"/client-preview/creative-impressions", "/client-preview/creative-impressions/"}:
             self.path = "/client-preview-creative-impressions.html"
 
@@ -3310,6 +3381,8 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
         if request_path in {"/client-preview/creative-impressions/thank-you", "/client-preview/creative-impressions/thank-you/"}:
             self.path = "/client-preview-creative-impressions-thank-you.html"
+
+
 
         # Common convenience routes.
         if request_path in {"/", ""}:
