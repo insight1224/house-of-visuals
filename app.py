@@ -2852,6 +2852,71 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 server.login(smtp_user, smtp_pass)
                 server.send_message(message)
 
+    def _send_client_feedback_email(self, fields):
+        smtp_host = os.getenv("HOV_SMTP_HOST")
+        smtp_port = int(os.getenv("HOV_SMTP_PORT", "587"))
+        smtp_user = os.getenv("HOV_SMTP_USER")
+        smtp_pass = os.getenv("HOV_SMTP_PASS")
+        smtp_from = os.getenv("HOV_SMTP_FROM", smtp_user or "")
+        feedback_to = os.getenv("HOV_FEEDBACK_TO", os.getenv("HOV_INQUIRY_TO"))
+        use_ssl = os.getenv("HOV_SMTP_SSL", "false").lower() in {"1", "true", "yes"}
+
+        missing = [
+            name
+            for name, value in [
+                ("HOV_SMTP_HOST", smtp_host),
+                ("HOV_SMTP_USER", smtp_user),
+                ("HOV_SMTP_PASS", smtp_pass),
+                ("HOV_SMTP_FROM", smtp_from),
+                ("HOV_INQUIRY_TO or HOV_FEEDBACK_TO", feedback_to),
+            ]
+            if not value
+        ]
+        if missing:
+            raise RuntimeError(f"Missing email env vars: {', '.join(missing)}")
+
+        def first(name):
+            values = fields.get(name, [])
+            return values[0].strip() if values else ""
+
+        lines = [
+            "New Client Preview Feedback",
+            "",
+            "Project",
+            f"Client Preview: {first('client_project') or 'Creative Impressions Media'}",
+            "",
+            "Contact Info",
+            f"Name: {first('full_name')}",
+            f"Email: {first('email')}",
+            "",
+            "Feedback Details",
+            f"Page: {first('page_name') or '-'}",
+            "",
+            "Requested Changes / Notes",
+            first("feedback_message") or "-",
+        ]
+
+        message = EmailMessage()
+        message["Subject"] = f"Website Preview Feedback: {first('client_project') or 'Creative Impressions Media'}"
+        message["From"] = smtp_from
+        message["To"] = feedback_to
+        if first("email"):
+            message["Reply-To"] = first("email")
+        message.set_content("\n".join(lines))
+
+        if use_ssl:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, context=ssl.create_default_context()) as server:
+                server.login(smtp_user, smtp_pass)
+                server.send_message(message)
+        else:
+            with smtplib.SMTP(smtp_host, smtp_port) as server:
+                server.ehlo()
+                server.starttls(context=ssl.create_default_context())
+                server.ehlo()
+                server.login(smtp_user, smtp_pass)
+                server.send_message(message)
+
+
     def do_POST(self):
         request_path = self.path.split("?", 1)[0]
 
@@ -3017,7 +3082,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 self._send_json({"ok": False, "message": str(error)}, status=400)
             return
 
-        if request_path not in {"/api/inquiry", "/api/testimonial", "/api/leads/update"}:
+        if request_path not in {"/api/inquiry", "/api/testimonial", "/api/leads/update", "/api/client-feedback"}:
             self._send_json({"ok": False, "message": "Not found."}, status=404)
             return
 
@@ -3052,6 +3117,13 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                     },
                     status=200,
                 )
+                return
+
+            if request_path == "/api/client-feedback":
+                self._send_client_feedback_email(fields)
+                self.send_response(303)
+                self.send_header("Location", "/client-preview/creative-impressions/thank-you")
+                self.end_headers()
                 return
 
             lead_id = create_lead(fields)
@@ -3229,6 +3301,15 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 return
             self._render_lead_detail(lead_id)
             return
+
+        if request_path in {"/client-preview/creative-impressions", "/client-preview/creative-impressions/"}:
+            self.path = "/client-preview-creative-impressions.html"
+
+        if request_path in {"/client-preview/creative-impressions/feedback", "/client-preview/creative-impressions/feedback/"}:
+            self.path = "/client-preview-creative-impressions-feedback.html"
+
+        if request_path in {"/client-preview/creative-impressions/thank-you", "/client-preview/creative-impressions/thank-you/"}:
+            self.path = "/client-preview-creative-impressions-thank-you.html"
 
         # Common convenience routes.
         if request_path in {"/", ""}:

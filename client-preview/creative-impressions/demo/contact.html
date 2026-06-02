@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Contact | Creative Impressions Media</title>
+
+  <meta name="description" content="Contact Creative Impressions Media for property photography, video, drone, measurements, floor plans, and property media questions." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/static/client-previews/creative-impressions/static/css/style.css" />
+</head>
+
+<body>
+
+  <header class="site-header page-header">
+    <div class="container nav-wrapper">
+      <a href="/client-preview/creative-impressions/demo/" class="logo">
+        <span>Creative</span> Impressions Media
+      </a>
+
+      <button class="menu-toggle" id="menuToggle" aria-label="Open navigation menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="nav-links" id="navLinks">
+        <a href="/client-preview/creative-impressions/demo/">Home</a>
+        <a href="https://creative-impressions-media-corp.aryeo.com/order" target="_blank" rel="noopener">Book Now</a>
+        <a href="/client-preview/creative-impressions/demo/measurements.html">Measurement Information</a>
+        <a href="/client-preview/creative-impressions/demo/portfolio.html">Portfolio</a>
+        <a href="/client-preview/creative-impressions/demo/rates.html">Rates</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="page-hero contact-hero">
+      <div class="container">
+        <p class="eyebrow">Contact</p>
+        <h1>Have a question about a property media project?</h1>
+        <p>
+          Send a message using the form below, or use the booking portal when you are ready to schedule services.
+        </p>
+
+        <div class="hero-buttons">
+          <a href="https://creative-impressions-media-corp.aryeo.com/order" class="btn btn-primary" target="_blank" rel="noopener">Book Now</a>
+          <a href="#contact-form" class="btn btn-secondary">Send a Message</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact-page section-padding" id="contact-form">
+      <div class="container contact-grid">
+
+        <div class="contact-card primary-contact-card">
+          <p class="section-label">Book Online</p>
+          <h2>Ready to schedule?</h2>
+          <p>
+            Use the booking portal to choose your service, submit property details, and reserve your session.
+          </p>
+
+          <a href="https://creative-impressions-media-corp.aryeo.com/order" class="btn btn-primary" target="_blank" rel="noopener">Open Booking Portal</a>
+        </div>
+
+        <div class="contact-card">
+          <p class="section-label">Contact Form</p>
+          <h2>Send a message.</h2>
+          <p>
+            Have a question about a commercial property, residential space, Airbnb/VRBO property, measurement service, or custom project? Send the details below.
+          </p>
+
+          
+
+          
+
+          <form class="contact-form" action="mailto:hello@houseofvisualsco.com" method="POST">
+            <div class="form-group">
+              <label for="name">Name</label>
+              <input type="text" id="name" name="name" placeholder="Your name" required>
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input type="tel" id="phone" name="phone" placeholder="Your phone number" required>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" placeholder="Your email address" required>
+            </div>
+
+            <div class="form-group">
+              <label for="message">Message</label>
+              <textarea id="message" name="message" rows="6" placeholder="Tell us how we can help..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Send Message</button>
+          </form>
+
+          <p class="form-note">
+            Your message will be sent to the Creative Impressions Media team.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <p>&copy; 2026 Creative Impressions Media. All rights reserved.</p>
+        <p>984-300-1945 | Raleigh, NC | Real estate photography, video, drone, and property media.</p>
+      </div>
+
+      <div class="footer-social-wrap">
+      <p class="footer-social-title">Follow Us</p>
+      <div class="footer-socials">
+        <a href="https://www.instagram.com/creativeimpressionsmedia_corp" target="_blank" rel="noopener" aria-label="Instagram"><i class="fa-brands fa-instagram"></i><span>Instagram</span></a>
+        <a href="https://www.facebook.com/photographywithcreativeimpressionsmedia?mibextid=wwXIfr&rdid=2KTXm7Nz9bj86qC3&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F18txFLis29%2F%3Fmibextid%3DwwXIfr" target="_blank" rel="noopener" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i><span>Facebook</span></a>
+          </div>
+    </div>
+  </footer>
+
+  <script>
+    const menuToggle = document.getElementById("menuToggle");
+    const navLinks = document.getElementById("navLinks");
+
+    menuToggle.addEventListener("click", () => {
+      navLinks.classList.toggle("active");
+      menuToggle.classList.toggle("active");
+    });
+
+    document.querySelectorAll(".nav-links a").forEach((link) => {
+      link.addEventListener("click", () => {
+        navLinks.classList.remove("active");
+        menuToggle.classList.remove("active");
+      });
+    });
+  </script>
+
+</body>
+</html>
