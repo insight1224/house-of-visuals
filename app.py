@@ -38,6 +38,30 @@ DEFAULT_PROSPECT_STATUSES = [
 ]
 VALID_PROSPECT_STATUSES = set(DEFAULT_PROSPECT_STATUSES)
 
+CLIENT_PREVIEWS = [
+    {
+        "client": "Creative Impressions Media",
+        "slug": "creative-impressions",
+        "type": "Website preview",
+        "status": "In Review",
+        "booking_link": "https://calendar.app.google/kkKWCQk94dLb3psH8",
+        "has_preview": True,
+        "has_demo": True,
+        "has_feedback": True,
+    },
+    {
+        "client": "Jukebox Lounge NC",
+        "slug": "jukebox-lounge",
+        "type": "Website / dashboard preview",
+        "status": "Coming Soon",
+        "booking_link": "https://calendar.app.google/kkKWCQk94dLb3psH8",
+        "has_preview": False,
+        "has_demo": False,
+        "has_feedback": False,
+    },
+]
+
+
 
 def load_env_files():
     for env_path in [PROJECT_DIR.parent / ".env", PROJECT_DIR / ".env"]:
@@ -137,6 +161,23 @@ def init_database():
             )
             """
         )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS client_previews (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                business_name TEXT NOT NULL,
+                demo_link TEXT NOT NULL,
+                loom_link TEXT,
+                notes TEXT NOT NULL DEFAULT '',
+                is_active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_client_previews_active ON client_previews (is_active)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_client_previews_created_at ON client_previews (created_at)")
+
         columns = [row["name"] for row in connection.execute("PRAGMA table_info(prospects)").fetchall()]
         if "next_follow_up" not in columns:
             connection.execute("ALTER TABLE prospects ADD COLUMN next_follow_up TEXT")
@@ -415,6 +456,67 @@ def update_prospect(prospect_id, fields):
                 prospect_id,
             ),
         )
+
+
+def create_client_preview(fields):
+    business_name = first(fields, "business_name") or "Unnamed Business"
+    demo_link = first(fields, "demo_link")
+    loom_link = first(fields, "loom_link")
+    notes = first(fields, "notes")
+    now = datetime.now().isoformat(timespec="seconds")
+
+    if not demo_link:
+        raise ValueError("Demo link is required.")
+
+    init_database()
+    with db_connect() as connection:
+        cursor = connection.execute(
+            """
+            INSERT INTO client_previews (
+                business_name, demo_link, loom_link, notes,
+                is_active, created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, 1, ?, ?)
+            """,
+            (business_name, demo_link, loom_link, notes, now, now),
+        )
+        return cursor.lastrowid
+
+
+def get_client_previews(include_inactive=True):
+    init_database()
+    with db_connect() as connection:
+        if include_inactive:
+            rows = connection.execute(
+                """
+                SELECT * FROM client_previews
+                ORDER BY is_active DESC, created_at DESC
+                """
+            ).fetchall()
+        else:
+            rows = connection.execute(
+                """
+                SELECT * FROM client_previews
+                WHERE is_active = 1
+                ORDER BY created_at DESC
+                """
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def deactivate_client_preview(preview_id):
+    init_database()
+    with db_connect() as connection:
+        connection.execute(
+            """
+            UPDATE client_previews
+            SET is_active = 0, updated_at = ?
+            WHERE id = ?
+            """,
+            (datetime.now().isoformat(timespec="seconds"), preview_id),
+        )
+
+
 
 
 def normalize_prospect_text(value):
@@ -1181,7 +1283,86 @@ class SiteHandler(SimpleHTTPRequestHandler):
                     margin: 0 0 0.9rem;
                     font-weight: 800;
                   }}
-                </style>
+      
+              /* Final admin button polish */
+              .admin-nav {{
+                display: flex !important;
+                align-items: center !important;
+                justify-content: flex-end !important;
+                gap: 0.55rem !important;
+                flex-wrap: wrap !important;
+              }}
+
+              .btn,
+              .btn-small,
+              .admin-nav a,
+              .quick-actions a {{
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                min-height: 40px !important;
+                padding: 0.65rem 0.95rem !important;
+                border-radius: 999px !important;
+                font-weight: 900 !important;
+                font-size: 0.9rem !important;
+                line-height: 1 !important;
+                text-decoration: none !important;
+                white-space: nowrap !important;
+                cursor: pointer !important;
+                border: 1px solid rgba(15, 74, 51, 0.16) !important;
+                box-shadow: 0 8px 14px rgba(13, 32, 23, 0.06) !important;
+                margin: 0 !important;
+              }}
+
+              .btn {{
+                background: linear-gradient(135deg, #1f7a57, #29a16f) !important;
+                color: #fff !important;
+                border-color: transparent !important;
+              }}
+
+              .btn-small,
+              .admin-nav a,
+              .quick-actions a:not(.btn) {{
+                background: #fffdf7 !important;
+                color: var(--green) !important;
+              }}
+
+              .admin-nav a[href="/admin/logout"] {{
+                background: #fff1ed !important;
+                color: #8a2d1f !important;
+                border-color: rgba(138, 45, 31, 0.22) !important;
+              }}
+
+              .quick-actions {{
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.55rem !important;
+                flex-wrap: wrap !important;
+              }}
+
+              .hero .quick-actions {{
+                margin-top: 1rem !important;
+              }}
+
+              .panel-head {{
+                align-items: center !important;
+              }}
+
+              @media (max-width: 700px) {{
+                .admin-nav,
+                .quick-actions {{
+                  justify-content: stretch !important;
+                }}
+
+                .btn,
+                .btn-small,
+                .admin-nav a,
+                .quick-actions a {{
+                  width: 100% !important;
+                }}
+              }}
+
+          </style>
               </head>
               <body>
                 <main class="login-card">
@@ -1732,7 +1913,9 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
               <p>House of Visuals Client Finder</p>
               <h1>Prospect Pipeline</h1>
               <div class="quick-actions">
-                <a class="btn" href="/admin/prospects/new">Add New Prospect</a>
+                <a class="btn" href="/admin/prospects/new">Add Prospect</a>
+                <a class="btn-small" href="/admin/research">Research Helper</a>
+                <a class="btn-small" href="/admin/prospects/import">Import Prospects</a>
                 <a class="btn-small" href="/admin/prospects/export">Export Prospects CSV</a>
               </div>
             </section>
@@ -2128,15 +2311,15 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
               <p>House of Visuals Lead Generator</p>
               <h1>Leads Dashboard</h1>
               <div class="quick-actions">
-                <a class="btn" href="/contact.html">View Public Form</a>
-                <a class="btn-small" href="/admin/leads/export">Export Leads CSV</a>
+                <a class="btn" href="/contact.html">Add Lead</a>
+                <a class="btn-small" href="/admin/client-previews">Client Previews</a>
                 <a class="btn-small" href="/admin/completed">Completed Projects</a>
+                <a class="btn-small" href="/admin/leads/export">Export Leads CSV</a>
               </div>
             </section>
 
             <section class="stats stats-four">{summary_cards}</section>
-
-            <section class="panel">
+<section class="panel">
               <div class="panel-head">
                 <div>
                   <h2>Lead Filters</h2>
@@ -2264,54 +2447,252 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
         self._send_html(html)
 
     def _render_client_previews(self):
+        previews = get_client_previews(include_inactive=True)
+        cards = []
+
+        for preview in previews:
+            preview_id = preview.get("id")
+            business_name = escape(preview.get("business_name") or "Unnamed Business")
+            demo_link = (preview.get("demo_link") or "").strip()
+            loom_link = (preview.get("loom_link") or "").strip()
+            notes = escape(preview.get("notes") or "")
+            is_active = int(preview.get("is_active") or 0) == 1
+            status_label = "Active" if is_active else "Inactive"
+
+            demo_button = (
+                f'<a class="btn-small" href="{escape(demo_link, quote=True)}" target="_blank" rel="noopener">Open Demo</a>'
+                if demo_link else
+                '<span class="preview-disabled">No Demo Link</span>'
+            )
+
+            loom_button = (
+                f'<a class="btn-small" href="{escape(loom_link, quote=True)}" target="_blank" rel="noopener">Open Loom</a>'
+                if loom_link else
+                '<span class="preview-disabled">No Loom Link</span>'
+            )
+
+            deactivate_button = ""
+            if is_active:
+                deactivate_button = f"""
+                <form action="/admin/client-previews/deactivate" method="POST" class="inline-form">
+                  <input type="hidden" name="preview_id" value="{preview_id}">
+                  <button class="btn-small danger-btn" type="submit">Deactivate</button>
+                </form>
+                """
+
+            cards.append(
+                f"""
+                <article class="preview-card {'inactive-card' if not is_active else ''}">
+                  <div class="preview-card-head">
+                    <div>
+                      <p class="preview-type">Client Demo</p>
+                      <h2>{business_name}</h2>
+                    </div>
+                    <span class="status">{status_label}</span>
+                  </div>
+
+                  <div class="preview-actions">
+                    {demo_button}
+                    {loom_button}
+                    {deactivate_button}
+                  </div>
+
+                  <div class="preview-notes">
+                    <strong>Notes</strong>
+                    <p>{notes or 'No notes added.'}</p>
+                  </div>
+                </article>
+                """
+            )
+
+        if not cards:
+            cards.append(
+                """
+                <article class="preview-card">
+                  <div class="preview-card-head">
+                    <div>
+                      <p class="preview-type">Client Demo</p>
+                      <h2>No client demos added yet</h2>
+                    </div>
+                  </div>
+                  <p class="preview-empty">Click “Add Client Demo” to save your first demo link.</p>
+                </article>
+                """
+            )
+
         html = self._admin_shell(
             "Client Previews",
-            """
+            f"""
+            <style>
+              .preview-grid {{
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem;
+              }}
+
+              .preview-card {{
+                border: 1px solid var(--line);
+                border-radius: 18px;
+                background: rgba(255, 255, 255, 0.96);
+                box-shadow: 0 14px 24px rgba(13, 32, 23, 0.08);
+                padding: 1rem;
+              }}
+
+              .inactive-card {{
+                opacity: 0.68;
+              }}
+
+              .preview-card-head {{
+                display: flex;
+                justify-content: space-between;
+                gap: 1rem;
+                align-items: flex-start;
+                margin-bottom: 1rem;
+              }}
+
+              .preview-card h2 {{
+                margin: 0;
+                font-family: Georgia, serif;
+                font-size: 1.55rem;
+                color: var(--green);
+              }}
+
+              .preview-type {{
+                margin: 0 0 0.25rem;
+                color: var(--muted);
+                font-weight: 900;
+                font-size: 0.82rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+              }}
+
+              .preview-actions {{
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.55rem;
+                align-items: center;
+                margin-bottom: 1rem;
+              }}
+
+              .inline-form {{
+                margin: 0;
+              }}
+
+              .preview-disabled {{
+                display: inline-flex;
+                align-items: center;
+                min-height: 34px;
+                border-radius: 999px;
+                padding: 0.45rem 0.75rem;
+                background: #eef1f4;
+                color: #60707a;
+                font-size: 0.86rem;
+                font-weight: 900;
+              }}
+
+              .preview-notes {{
+                border-top: 1px solid rgba(15, 74, 51, 0.12);
+                padding-top: 0.85rem;
+              }}
+
+              .preview-notes strong {{
+                display: block;
+                color: var(--green);
+                margin-bottom: 0.25rem;
+              }}
+
+              .preview-notes p,
+              .preview-empty {{
+                margin: 0;
+                color: var(--muted);
+                line-height: 1.55;
+              }}
+
+              @media (max-width: 850px) {{
+                .preview-grid {{
+                  grid-template-columns: 1fr;
+                }}
+
+                .preview-card-head {{
+                  display: block;
+                }}
+
+                .preview-card-head .status {{
+                  margin-top: 0.65rem;
+                }}
+
+                .preview-actions .btn-small,
+                .preview-actions .preview-disabled,
+                .inline-form,
+                .inline-form button {{
+                  width: 100%;
+                }}
+              }}
+            </style>
+
             <section class="hero">
               <p>House of Visuals Admin</p>
-              <h1>Client Previews</h1>
+              <h1>Client Demo Tracker</h1>
+              <a class="btn" href="/admin/client-previews/new">Add Client Demo</a>
             </section>
 
             <section class="panel">
               <div class="panel-head">
                 <div>
-                  <h2>Active Client Preview Links</h2>
-                  <p>Use this area to manage and quickly access private client review pages.</p>
+                  <h2>Saved Client Demos</h2>
+                  <p>Save demo links, Loom walkthroughs, and notes for client previews you send out.</p>
                 </div>
               </div>
 
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Client</th>
-                      <th>Status</th>
-                      <th>Preview</th>
-                      <th>Demo</th>
-                      <th>Feedback</th>
-                      <th>Review Call</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>Creative Impressions Media</strong><br><span class="mobile-muted">Website preview</span></td>
-                      <td><span class="status">In Review</span></td>
-                      <td><a class="btn-small" href="/client-preview/creative-impressions" target="_blank" rel="noopener">Open Preview</a></td>
-                      <td><a class="btn-small" href="/client-preview/creative-impressions/demo/" target="_blank" rel="noopener">Open Demo</a></td>
-                      <td><a class="btn-small" href="/client-preview/creative-impressions/feedback" target="_blank" rel="noopener">Open Form</a></td>
-                      <td><a class="btn-small" href="https://calendar.app.google/kkKWCQk94dLb3psH8" target="_blank" rel="noopener">Booking Link</a></td>
-                    </tr>
-                    <tr>
-                      <td><strong>Jukebox Lounge NC</strong><br><span class="mobile-muted">Website / dashboard preview</span></td>
-                      <td><span class="status">Coming Soon</span></td>
-                      <td><span class="mobile-muted">Not added yet</span></td>
-                      <td><span class="mobile-muted">Not added yet</span></td>
-                      <td><span class="mobile-muted">Not added yet</span></td>
-                      <td><a class="btn-small" href="https://calendar.app.google/kkKWCQk94dLb3psH8" target="_blank" rel="noopener">Booking Link</a></td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="preview-grid">
+                {''.join(cards)}
               </div>
+            </section>
+            """,
+        )
+        self._send_html(html)
+
+    def _render_client_preview_form(self):
+        html = self._admin_shell(
+            "Add Client Demo",
+            """
+            <section class="hero">
+              <p>House of Visuals Admin</p>
+              <h1>Add Client Demo</h1>
+              <a class="btn" href="/admin/client-previews">Back to Demo Tracker</a>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>New Client Demo</h2>
+                  <p>Add the business name, demo link, Loom walkthrough, and any notes you want to track.</p>
+                </div>
+              </div>
+
+              <form method="POST" action="/admin/client-previews/new">
+                <label>
+                  Business Name
+                  <input type="text" name="business_name" placeholder="House of Visuals Co." required>
+                </label>
+
+                <label>
+                  Demo Link
+                  <input type="url" name="demo_link" placeholder="https://houseofvisualsco.com/client-preview/client-name" required>
+                </label>
+
+                <label>
+                  Loom Link
+                  <input type="url" name="loom_link" placeholder="https://www.loom.com/share/...">
+                </label>
+
+                <label>
+                  Notes
+                  <textarea name="notes" placeholder="Example: Sent preview link and Loom walkthrough on June 2. Waiting for client feedback."></textarea>
+                </label>
+
+                <button class="btn" type="submit">Save Client Demo</button>
+              </form>
             </section>
             """,
         )
@@ -2368,8 +2749,79 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 text-decoration: none;
                 cursor: pointer;
               }}
-              .btn {{ min-height: 44px; padding: 0.75rem 1.05rem; margin-top: 1rem; }}
-              .btn-small {{ min-height: 34px; padding: 0.45rem 0.75rem; font-size: 0.86rem; }}
+              .btn,
+              .btn-small,
+              .admin-nav a,
+              .quick-actions a,
+              .quick-actions button {{
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.35rem;
+                border: 0;
+                border-radius: 999px;
+                font-weight: 900;
+                text-decoration: none;
+                cursor: pointer;
+                line-height: 1;
+                white-space: nowrap;
+                transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+              }}
+
+              .btn {{
+                min-height: 44px;
+                padding: 0.78rem 1.1rem;
+                margin-top: 0;
+                background: linear-gradient(135deg, #1f7a57, #29a16f);
+                color: #fff;
+                box-shadow: 0 10px 18px rgba(31, 122, 87, 0.18);
+              }}
+
+              .btn-small,
+              .admin-nav a,
+              .quick-actions a:not(.btn),
+              .quick-actions button:not(.btn) {{
+                min-height: 38px;
+                padding: 0.58rem 0.85rem;
+                font-size: 0.88rem;
+                background: #fffdf7;
+                color: var(--green);
+                border: 1px solid rgba(15, 74, 51, 0.16);
+                box-shadow: 0 8px 15px rgba(13, 32, 23, 0.06);
+              }}
+
+              .btn:hover,
+              .btn-small:hover,
+              .admin-nav a:hover,
+              .quick-actions a:hover,
+              .quick-actions button:hover {{
+                transform: translateY(-1px);
+              }}
+
+              .quick-actions {{
+                display: flex;
+                align-items: center;
+                gap: 0.55rem;
+                flex-wrap: wrap;
+              }}
+
+              .admin-nav {{
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+              }}
+
+              .admin-nav a[href="/admin/logout"] {{
+                background: #fff1ed;
+                color: #8a2d1f;
+                border-color: rgba(138, 45, 31, 0.2);
+              }}
+
+              .panel-head .quick-actions,
+              .hero .quick-actions {{
+                margin-top: 0.75rem;
+              }}
               .admin-nav {{
                 display: flex;
                 flex-wrap: wrap;
@@ -2576,6 +3028,35 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
               .panel-head {{ display: flex; justify-content: space-between; gap: 1rem; align-items: end; margin-bottom: 0.75rem; }}
               .panel h2 {{ margin: 0 0 0.75rem; font-family: Georgia, serif; font-size: 1.45rem; }}
               .panel p {{ color: var(--muted); margin: 0; }}
+              .admin-shortcuts {{
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 0.75rem;
+              }}
+              .admin-shortcut {{
+                display: grid;
+                gap: 0.35rem;
+                border: 1px solid rgba(15, 74, 51, 0.14);
+                border-radius: 16px;
+                background: #fffdf7;
+                padding: 0.9rem;
+                text-decoration: none;
+                box-shadow: 0 10px 18px rgba(13, 32, 23, 0.06);
+              }}
+              .admin-shortcut strong {{
+                color: var(--green);
+                font-size: 1rem;
+              }}
+              .admin-shortcut span {{
+                color: var(--muted);
+                font-size: 0.9rem;
+                line-height: 1.4;
+              }}
+              .admin-shortcut:hover {{
+                transform: translateY(-1px);
+                border-color: rgba(201, 162, 79, 0.45);
+              }}
+
               .table-wrap {{ overflow-x: auto; }}
               table {{ width: 100%; border-collapse: collapse; min-width: 760px; }}
               th, td {{ padding: 0.72rem; text-align: left; border-bottom: 1px solid rgba(15, 74, 51, 0.12); vertical-align: top; }}
@@ -2635,7 +3116,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 }}
               @media (max-width: 850px) {{
                 .wrap {{ width: min(100% - 1rem, 1180px); }}
-                .stats, .stats-four, .detail-grid, .filters, .message-grid {{ grid-template-columns: 1fr; }}
+                .stats, .stats-four, .detail-grid, .filters, .message-grid, .admin-shortcuts {{ grid-template-columns: 1fr; }}
                 .panel-head {{ display: block; }}
                 .details, .full-fields {{ grid-template-columns: 1fr; }}
                 .btn {{ width: 100%; }}
@@ -2646,17 +3127,10 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
           <body>
             <main class="wrap">
               <nav class="admin-nav">
-                <strong>House of Visuals Admin</strong>
-                <div>
-                  <a href="/admin">Leads</a>
-                  <a href="/admin/prospects">Prospects</a>
-                  <a href="/admin/completed">Completed</a>
-                  <a href="/admin/client-previews">Client Previews</a>
-                  <a href="/admin/prospects/new">Add Prospect</a>
-                  <a href="/admin/research">Research Helper</a>
-                  <a href="/admin/prospects/import">Import</a>
-                  <a href="/admin/logout">Logout</a>
-                </div>
+                <a href="/admin">Leads</a>
+                <a href="/admin/prospects">Prospects</a>
+                <a href="/admin/prospects/import">Import</a>
+                <a href="/admin/logout">Logout</a>
               </nav>
               {body}
             </main>
@@ -3137,7 +3611,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 self._send_json({"ok": False, "message": str(error)}, status=400)
             return
 
-        if request_path not in {"/api/inquiry", "/api/testimonial", "/api/leads/update", "/api/client-feedback"}:
+        if request_path not in {"/api/inquiry", "/api/testimonial", "/api/leads/update", "/api/client-feedback", "/admin/client-previews/new", "/admin/client-previews/deactivate"}:
             self._send_json({"ok": False, "message": "Not found."}, status=404)
             return
 
@@ -3178,6 +3652,27 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 self._send_client_feedback_email(fields)
                 self.send_response(303)
                 self.send_header("Location", "/client-preview/creative-impressions/thank-you")
+                self.end_headers()
+                return
+
+            if request_path == "/admin/client-previews/new":
+                if not self._admin_allowed():
+                    self._send_json({"ok": False, "message": "Admin access required."}, status=403)
+                    return
+                create_client_preview(fields)
+                self.send_response(303)
+                self.send_header("Location", "/admin/client-previews")
+                self.end_headers()
+                return
+
+            if request_path == "/admin/client-previews/deactivate":
+                if not self._admin_allowed():
+                    self._send_json({"ok": False, "message": "Admin access required."}, status=403)
+                    return
+                preview_id = int(first(fields, "preview_id"))
+                deactivate_client_preview(preview_id)
+                self.send_response(303)
+                self.send_header("Location", "/admin/client-previews")
                 self.end_headers()
                 return
 
@@ -3246,6 +3741,13 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             self._render_client_previews()
             return
 
+        if request_path in {"/admin/client-previews/new", "/admin/client-previews/new/"}:
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._render_client_preview_form()
+            return
+
         if request_path == "/admin/login":
             self._send_admin_login_required(status=200)
             return
@@ -3253,7 +3755,8 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
         if request_path == "/admin/logout":
             self.send_response(303)
             self.send_header("Set-Cookie", "hov_admin_session=; Path=/admin; Max-Age=0; HttpOnly; SameSite=Lax")
-            self.send_header("Location", "/admin")
+            self.send_header("Set-Cookie", "hov_admin_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax")
+            self.send_header("Location", "/admin/login")
             self.end_headers()
             return
 
