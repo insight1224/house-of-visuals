@@ -429,3 +429,20 @@ nav a {
 .original-card p {
   font-size: 0.72rem !important;
 }
+
+.membership-donation-btn {
+  display: inline-block;
+  margin-top: 18px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: 2px solid #d4af37;
+  color: #d4af37;
+  text-decoration: none;
+  font-weight: 800;
+  transition: all .3s ease;
+}
+
+.membership-donation-btn:hover {
+  background: #d4af37;
+  color: #120804;
+}
