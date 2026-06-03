@@ -955,3 +955,14 @@ if (demoCategoryOpeners.length && demoExperienceModal) {
     }
   });
 }
+
+document.addEventListener("click", function (event) {
+  const button = event.target.closest(".testimonial-toggle");
+  if (!button) return;
+
+  const card = button.closest(".featured-testimonial-card");
+  const isExpanded = card.classList.toggle("expanded");
+
+  button.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+  button.textContent = isExpanded ? "Show Less" : "Read Full Testimonial";
+});
