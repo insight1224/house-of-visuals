@@ -506,7 +506,7 @@ p {
 .portfolio-hero {
   background:
     linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
-    url("../images/airbnb.jpg") center/cover no-repeat;
+    url("../images/portfolio-hero.jpg") center/cover no-repeat;
 }
 
 .portfolio-page {
@@ -830,7 +830,7 @@ p {
 .contact-hero {
   background:
     linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
-    url("../images/drone.jpg") center/cover no-repeat;
+    url("../images/contact-hero.jpg") center/cover no-repeat;
 }
 
 .contact-page {
@@ -988,7 +988,7 @@ p {
 .rates-hero {
   background:
     linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
-    url("../images/commercial.jpg") center/cover no-repeat;
+    url("../images/rates-hero.jpg") center/cover no-repeat;
 }
 
 .rates-page {
@@ -1456,7 +1456,7 @@ grid-template-columns: 1fr;
 .measurements-hero {
   background:
     linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
-    url("../images/residential.jpg") center/cover no-repeat;
+    url("../images/measurements-hero.jpg") center/cover no-repeat;
 }
 
 .measurement-page {
@@ -1888,7 +1888,7 @@ grid-template-columns: 1fr;
 }
 
 .showcase .section-heading::after {
-  content: "PROPERTY MEDIA";
+  content: "";
   display: inline-block;
   margin-top: 18px;
   color: rgba(185, 150, 91, 0.18);
@@ -2098,4 +2098,35 @@ body.lightbox-open {
   .page-hero h1 {
     font-size: 2.35rem;
   }
+}
+
+/* Final Hero Image Overrides */
+.hero {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.62)),
+    url("../images/homepage-hero.jpg") center/cover no-repeat !important;
+}
+
+.portfolio-hero {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
+    url("../images/portfolio-hero.jpg") center/cover no-repeat !important;
+}
+
+.rates-hero {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
+    url("../images/rates-hero.jpg") center/cover no-repeat !important;
+}
+
+.measurements-hero {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
+    url("../images/measurements-hero.jpg") center/cover no-repeat !important;
+}
+
+.contact-hero {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
+    url("../images/contact-hero.jpg") center/cover no-repeat !important;
 }
