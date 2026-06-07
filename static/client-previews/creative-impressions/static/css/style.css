@@ -2130,3 +2130,1185 @@ body.lightbox-open {
     linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
     url("../images/contact-hero.jpg") center/cover no-repeat !important;
 }
+
+/* Final Mobile Polish */
+@media (max-width: 900px) {
+  .container {
+    width: min(92%, 680px);
+  }
+
+  .site-header {
+    padding: 18px 0;
+  }
+
+  .logo {
+    font-size: 0.92rem;
+    max-width: 210px;
+    line-height: 1.2;
+  }
+
+  .nav-links {
+    top: 72px;
+    padding: 12px;
+    gap: 4px;
+    max-height: 78vh;
+    overflow-y: auto;
+  }
+
+  .nav-links a {
+    font-size: 0.92rem;
+    padding: 13px 14px;
+  }
+
+  .hero,
+  .page-hero {
+    min-height: auto !important;
+    padding-top: 118px;
+    padding-bottom: 54px;
+  }
+
+  .hero-content {
+    padding-top: 0;
+  }
+
+  .hero h1,
+  .page-hero h1 {
+    font-size: clamp(2.25rem, 10vw, 3.45rem);
+    line-height: 1.03;
+    margin-bottom: 18px;
+  }
+
+  .hero-subtext,
+  .page-hero p {
+    font-size: 0.98rem;
+    line-height: 1.65;
+    margin-bottom: 24px;
+  }
+
+  .eyebrow,
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.13em;
+  }
+
+  .hero-buttons {
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .btn {
+    padding: 14px 18px;
+    font-size: 0.94rem;
+  }
+
+  .hero-stats {
+    gap: 12px;
+  }
+
+  .hero-stats div {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .section-padding {
+    padding: 58px 0;
+  }
+
+  h2 {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+
+  .section-heading {
+    margin-bottom: 32px;
+  }
+
+  .service-card,
+  .service-detail-card,
+  .pricing-card,
+  .rates-card,
+  .contact-card,
+  .measurement-card,
+  .process-step,
+  .testimonial-card,
+  .serve-card,
+  .values-list div,
+  .faq-item {
+    border-radius: 22px;
+    padding: 22px;
+  }
+
+  .masonry-portfolio-grid {
+    columns: 2 170px;
+    column-gap: 12px;
+  }
+
+  .masonry-portfolio-grid a {
+    margin-bottom: 12px;
+    border-radius: 20px;
+  }
+
+  .portfolio-count {
+    border-radius: 16px;
+    padding: 14px 16px;
+  }
+
+  .portfolio-count p {
+    font-size: 0.9rem;
+  }
+
+  .real-portfolio-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-form {
+    gap: 15px;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    padding: 14px;
+    font-size: 1rem;
+  }
+
+  .footer-content {
+    gap: 18px;
+  }
+
+  .footer-social-wrap {
+    justify-items: start;
+  }
+
+  .footer-socials {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .container {
+    width: 90%;
+  }
+
+  .hero,
+  .page-hero {
+    padding-top: 108px;
+    padding-bottom: 48px;
+  }
+
+  .hero h1,
+  .page-hero h1 {
+    font-size: 2.18rem;
+  }
+
+  .hero-subtext,
+  .page-hero p {
+    font-size: 0.95rem;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .masonry-portfolio-grid {
+    columns: 1;
+  }
+
+  .masonry-portfolio-grid a {
+    border-radius: 22px;
+  }
+
+  .footer p {
+    font-size: 0.84rem;
+  }
+
+  .footer-socials a {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Mobile White Space Fix */
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img,
+video {
+  max-width: 100%;
+}
+
+@media (max-width: 700px) {
+  .hero,
+  .intro,
+  .services,
+  .portfolio,
+  .process,
+  .why,
+  .testimonials,
+  .final-cta,
+  .footer {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .container {
+    width: 90%;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero {
+    background-position: center center !important;
+    background-size: cover !important;
+  }
+
+  .hero-content {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero h1,
+  .hero-subtext {
+    max-width: 100%;
+  }
+
+  .hero-stats {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .hero-stats div {
+    width: 100%;
+  }
+
+  .hero-buttons {
+    width: 100%;
+  }
+
+  .hero-buttons .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Homepage Mobile Redesign Fix */
+@media (max-width: 700px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 22px;
+    padding-right: 22px;
+    margin: 0 auto;
+  }
+
+  .site-header .container,
+  .nav-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .hero {
+    width: 100%;
+    min-height: auto !important;
+    padding: 120px 0 55px;
+    background-position: center center !important;
+  }
+
+  .hero-content {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .hero h1 {
+    font-size: 2.15rem !important;
+    line-height: 1.05;
+    max-width: 100%;
+    margin-bottom: 18px;
+  }
+
+  .hero-subtext {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    max-width: 100%;
+  }
+
+  .hero-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .hero-buttons .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hero-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .hero-stats div {
+    width: 100%;
+    padding: 18px;
+  }
+
+  .intro-grid,
+  .service-grid,
+  .portfolio-grid,
+  .portfolio-cards,
+  .process-grid,
+  .why-grid,
+  .testimonial-grid,
+  .cta-details {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    width: 100%;
+    max-width: 100%;
+    gap: 18px;
+  }
+
+  .intro,
+  .services,
+  .portfolio,
+  .process,
+  .why,
+  .testimonials,
+  .final-cta {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .section-padding {
+    padding: 56px 0;
+  }
+
+  .section-heading {
+    margin-bottom: 28px;
+  }
+
+  h2 {
+    font-size: 2rem !important;
+    line-height: 1.08;
+  }
+
+  .service-card,
+  .portfolio-card,
+  .process-step,
+  .testimonial-card,
+  .why-list div,
+  .cta-details div {
+    width: 100%;
+    max-width: 100%;
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .portfolio-card.large {
+    min-height: 220px;
+  }
+
+  .final-cta-content {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .final-cta h2 {
+    font-size: 2rem !important;
+  }
+
+  .footer-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    text-align: left;
+  }
+}
+
+/* Shorter Mobile Homepage Layout */
+@media (max-width: 700px) {
+  /* Hide extra homepage sections on mobile to keep page shorter */
+  .hero-stats,
+  .process,
+  .testimonials,
+  .cta-details {
+    display: none !important;
+  }
+
+  /* Tighten homepage spacing */
+  .hero {
+    padding-top: 112px !important;
+    padding-bottom: 42px !important;
+  }
+
+  .intro,
+  .services,
+  .portfolio,
+  .why,
+  .final-cta {
+    padding-top: 44px !important;
+    padding-bottom: 44px !important;
+  }
+
+  .section-heading {
+    margin-bottom: 22px !important;
+  }
+
+  /* Make services shorter */
+  .service-grid {
+    gap: 12px !important;
+  }
+
+  .service-card {
+    padding: 18px !important;
+  }
+
+  .service-card span {
+    margin-bottom: 10px !important;
+  }
+
+  .service-card h3 {
+    margin-bottom: 8px !important;
+  }
+
+  /* Make portfolio preview shorter */
+  .portfolio-cards {
+    gap: 12px !important;
+  }
+
+  .portfolio-card {
+    min-height: 140px !important;
+  }
+
+  .portfolio-card.large {
+    min-height: 160px !important;
+  }
+
+  /* Make final CTA more compact */
+  .final-cta {
+    padding-top: 50px !important;
+    padding-bottom: 50px !important;
+  }
+}
+
+/* Mobile Portfolio Carousel */
+@media (max-width: 700px) {
+  .portfolio-count {
+    display: none;
+  }
+
+  .masonry-portfolio-grid {
+    display: flex !important;
+    overflow-x: auto;
+    gap: 16px;
+    columns: unset !important;
+    scroll-snap-type: x mandatory;
+    padding: 6px 0 18px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .masonry-portfolio-grid a {
+    flex: 0 0 82%;
+    margin-bottom: 0 !important;
+    scroll-snap-align: center;
+    border-radius: 26px;
+    box-shadow: 0 16px 42px rgba(0,0,0,0.14);
+  }
+
+  .masonry-portfolio-grid img {
+    width: 100%;
+    height: 430px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .masonry-portfolio-grid::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .masonry-portfolio-grid::-webkit-scrollbar-track {
+    background: rgba(185, 150, 91, 0.12);
+    border-radius: 999px;
+  }
+
+  .masonry-portfolio-grid::-webkit-scrollbar-thumb {
+    background: var(--gold);
+    border-radius: 999px;
+  }
+
+  .showcase .section-heading {
+    margin-bottom: 20px !important;
+  }
+
+  .showcase .section-heading p {
+    font-size: 0.95rem;
+  }
+
+  .showcase::after {
+    content: "Swipe to view portfolio";
+    display: block;
+    width: 90%;
+    margin: -28px auto 34px;
+    color: var(--gray);
+    font-weight: 800;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .masonry-portfolio-grid a {
+    flex-basis: 86%;
+  }
+
+  .masonry-portfolio-grid img {
+    height: 360px;
+  }
+}
+
+/* Mobile Portfolio CTA Cleanup */
+@media (max-width: 700px) {
+  .portfolio-cta,
+  .portfolio-cta-grid,
+  .portfolio-cta-content {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .portfolio-cta {
+    padding: 54px 0 !important;
+  }
+
+  .portfolio-cta-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+    text-align: center;
+  }
+
+  .portfolio-cta h2 {
+    font-size: 2rem !important;
+    line-height: 1.08 !important;
+    max-width: 100%;
+    margin-bottom: 16px;
+  }
+
+  .portfolio-cta p {
+    font-size: 0.98rem !important;
+    line-height: 1.65 !important;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .portfolio-cta .hero-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: 100%;
+    margin-top: 22px;
+  }
+
+  .portfolio-cta .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .portfolio-cta-visual,
+  .portfolio-cta-image,
+  .portfolio-cta-card {
+    width: 100%;
+    max-width: 100%;
+    min-height: 220px !important;
+    border-radius: 24px;
+  }
+}
+
+/* Mobile Rates Page Cleanup */
+@media (max-width: 700px) {
+  .rates-page {
+    overflow-x: hidden;
+  }
+
+  .rates-page .section-heading {
+    margin-bottom: 22px !important;
+  }
+
+  .rates-page .section-heading h2 {
+    font-size: 2rem !important;
+    line-height: 1.08 !important;
+  }
+
+  .rates-page .section-heading p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .rates-grid {
+    display: flex !important;
+    grid-template-columns: none !important;
+    overflow-x: auto;
+    gap: 16px;
+    scroll-snap-type: x mandatory;
+    padding: 4px 0 18px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .rates-grid::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .rates-grid::-webkit-scrollbar-track {
+    background: rgba(185, 150, 91, 0.12);
+    border-radius: 999px;
+  }
+
+  .rates-grid::-webkit-scrollbar-thumb {
+    background: var(--gold);
+    border-radius: 999px;
+  }
+
+  .rates-card {
+    flex: 0 0 84%;
+    scroll-snap-align: center;
+    padding: 24px !important;
+    border-radius: 24px !important;
+    min-height: auto;
+  }
+
+  .featured-rates-card {
+    transform: none !important;
+  }
+
+  .rates-card h3 {
+    font-size: 1.35rem !important;
+    line-height: 1.15;
+  }
+
+  .rates-card p,
+  .rates-card li {
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .rates-card ul {
+    margin-bottom: 22px;
+  }
+
+  .rates-card .btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .rates-page::after {
+    content: "Swipe to view rate options";
+    display: block;
+    width: 90%;
+    margin: -8px auto 34px;
+    color: var(--gray);
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .app-section {
+    padding-top: 44px !important;
+    padding-bottom: 44px !important;
+  }
+
+  .app-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .app-card {
+    padding: 22px !important;
+    border-radius: 22px;
+  }
+}
+
+@media (max-width: 430px) {
+  .rates-card {
+    flex-basis: 88%;
+  }
+}
+
+/* Measurement Accordion Layout */
+.measurement-heading {
+  max-width: 850px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.measurement-heading .btn {
+  margin-top: 22px;
+}
+
+.measurement-accordion {
+  display: grid;
+  gap: 16px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.measurement-accordion-item {
+  background: var(--white);
+  border: 1px solid rgba(185, 150, 91, 0.18);
+  border-radius: 24px;
+  padding: 0;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+.measurement-accordion-item summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 22px 26px;
+  font-weight: 900;
+  color: var(--charcoal);
+  font-size: 1.05rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.measurement-accordion-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.measurement-accordion-item summary::after {
+  content: "+";
+  color: var(--gold);
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.measurement-accordion-item[open] summary::after {
+  content: "–";
+}
+
+.measurement-accordion-item p {
+  padding: 0 26px;
+  margin-bottom: 16px;
+  color: var(--gray);
+}
+
+.measurement-accordion-item p:last-child {
+  padding-bottom: 24px;
+}
+
+@media (max-width: 700px) {
+  .measurement-page {
+    overflow-x: hidden;
+  }
+
+  .measurement-heading {
+    text-align: left;
+    margin-bottom: 26px !important;
+  }
+
+  .measurement-heading h2 {
+    font-size: 2rem !important;
+    line-height: 1.08 !important;
+  }
+
+  .measurement-heading p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .measurement-heading .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .measurement-accordion {
+    gap: 12px;
+  }
+
+  .measurement-accordion-item {
+    border-radius: 20px;
+  }
+
+  .measurement-accordion-item summary {
+    padding: 18px 20px;
+    font-size: 0.98rem;
+  }
+
+  .measurement-accordion-item p {
+    padding: 0 20px;
+    font-size: 0.94rem;
+    line-height: 1.6;
+  }
+
+  .measurement-accordion-item p:last-child {
+    padding-bottom: 20px;
+  }
+}
+
+/* Mobile Contact Page Cleanup */
+@media (max-width: 700px) {
+  .contact-page {
+    overflow-x: hidden;
+    padding-top: 44px !important;
+    padding-bottom: 44px !important;
+  }
+
+  .contact-grid {
+    display: flex !important;
+    flex-direction: column;
+    gap: 18px !important;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .contact-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 22px !important;
+    border-radius: 22px !important;
+  }
+
+  /* Put contact form first on mobile */
+  .contact-card:nth-child(2) {
+    order: 1;
+  }
+
+  .contact-card:nth-child(1) {
+    order: 2;
+  }
+
+  .contact-card h2 {
+    font-size: 2rem !important;
+    line-height: 1.08 !important;
+    margin-bottom: 14px;
+  }
+
+  .contact-card p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .contact-form {
+    gap: 14px !important;
+    margin-top: 22px !important;
+  }
+
+  .form-group {
+    gap: 7px;
+  }
+
+  .form-group label {
+    font-size: 0.9rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px !important;
+    font-size: 1rem !important;
+    border-radius: 14px !important;
+  }
+
+  .form-group textarea {
+    min-height: 130px;
+  }
+
+  .contact-form .btn,
+  .contact-card .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-note {
+    font-size: 0.84rem;
+    line-height: 1.5;
+  }
+
+  /* Make the booking card shorter on mobile */
+  .primary-contact-card {
+    padding: 20px !important;
+  }
+
+  .primary-contact-card h2 {
+    font-size: 1.75rem !important;
+  }
+}
+
+/* Mobile Services Page Cleanup */
+@media (max-width: 700px) {
+  .services-page,
+  .service-details,
+  .property-types {
+    overflow-x: hidden;
+  }
+
+  .service-detail-grid {
+    display: flex !important;
+    grid-template-columns: none !important;
+    overflow-x: auto;
+    gap: 16px;
+    scroll-snap-type: x mandatory;
+    padding: 4px 0 18px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .service-detail-grid::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .service-detail-grid::-webkit-scrollbar-track {
+    background: rgba(185, 150, 91, 0.12);
+    border-radius: 999px;
+  }
+
+  .service-detail-grid::-webkit-scrollbar-thumb {
+    background: var(--gold);
+    border-radius: 999px;
+  }
+
+  .service-detail-card {
+    flex: 0 0 86%;
+    scroll-snap-align: center;
+    padding: 24px !important;
+    border-radius: 24px !important;
+    min-height: auto;
+  }
+
+  .service-detail-card h3 {
+    font-size: 1.55rem !important;
+    line-height: 1.12 !important;
+  }
+
+  .service-detail-card p,
+  .service-detail-card li {
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .service-detail-card ul {
+    margin-top: 14px;
+    padding-left: 18px;
+  }
+
+  .service-detail-card li {
+    margin-bottom: 8px;
+  }
+
+  .service-details::after {
+    content: "Swipe to view services";
+    display: block;
+    width: 90%;
+    margin: -8px auto 32px;
+    color: var(--gray);
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .property-type-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .property-type-card {
+    padding: 20px !important;
+    border-radius: 22px !important;
+  }
+
+  .property-type-card h3 {
+    font-size: 1.25rem !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .service-detail-card {
+    flex-basis: 88%;
+  }
+}
+
+/* Final Homepage Mobile Polish */
+@media (max-width: 700px) {
+  /* Keep homepage focused and shorter */
+  .intro {
+    padding-top: 44px !important;
+    padding-bottom: 36px !important;
+  }
+
+  .intro-grid {
+    gap: 18px !important;
+  }
+
+  .intro-card-grid {
+    display: none !important;
+  }
+
+  /* Make homepage services easier to skim */
+  .services .section-heading p {
+    display: none;
+  }
+
+  .service-grid {
+    display: flex !important;
+    grid-template-columns: none !important;
+    overflow-x: auto;
+    gap: 14px !important;
+    scroll-snap-type: x mandatory;
+    padding: 4px 0 18px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .service-grid::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .service-grid::-webkit-scrollbar-track {
+    background: rgba(185, 150, 91, 0.12);
+    border-radius: 999px;
+  }
+
+  .service-grid::-webkit-scrollbar-thumb {
+    background: var(--gold);
+    border-radius: 999px;
+  }
+
+  .service-card {
+    flex: 0 0 82%;
+    scroll-snap-align: center;
+    min-height: auto;
+  }
+
+  .services::after {
+    content: "Swipe to view services";
+    display: block;
+    width: 90%;
+    margin: -8px auto 28px;
+    color: var(--gray);
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  /* Tighten portfolio preview */
+  .portfolio .section-heading p {
+    display: none;
+  }
+
+  .portfolio-grid,
+  .portfolio-cards {
+    gap: 14px !important;
+  }
+
+  .portfolio-card:nth-child(n+3) {
+    display: none;
+  }
+
+  /* Tighten why choose */
+  .why .section-heading p {
+    display: none;
+  }
+
+  .why-grid {
+    gap: 14px !important;
+  }
+
+  .why-card,
+  .why-list div {
+    padding: 20px !important;
+  }
+
+  /* Keep final CTA short */
+  .final-cta p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+}
+
+@media (max-width: 430px) {
+  .service-card {
+    flex-basis: 86%;
+  }
+}
+
+/* Homepage Mobile Portfolio Preview - 2x2 Grid */
+@media (max-width: 700px) {
+  .portfolio-card:nth-child(n+3) {
+    display: flex !important;
+  }
+
+  .portfolio-cards {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    width: 100%;
+  }
+
+  .portfolio-card,
+  .portfolio-card.large {
+    min-height: 130px !important;
+    height: 130px !important;
+    border-radius: 20px !important;
+    padding: 16px !important;
+  }
+
+  .portfolio-card h3,
+  .portfolio-card p {
+    font-size: 0.92rem !important;
+    line-height: 1.15 !important;
+  }
+
+  .portfolio-card h3 {
+    margin-bottom: 4px !important;
+  }
+
+  .portfolio .btn {
+    margin-top: 18px;
+  }
+}
+
+@media (max-width: 430px) {
+  .portfolio-card,
+  .portfolio-card.large {
+    min-height: 118px !important;
+    height: 118px !important;
+    padding: 14px !important;
+  }
+
+  .portfolio-card h3,
+  .portfolio-card p {
+    font-size: 0.85rem !important;
+  }
+}
