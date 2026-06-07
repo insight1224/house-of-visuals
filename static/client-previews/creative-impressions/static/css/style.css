@@ -3312,3 +3312,156 @@ video {
     font-size: 0.85rem !important;
   }
 }
+
+/* Photo Editing Page */
+.photo-editing-hero {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
+    url("../images/contact-hero.jpg") center/cover no-repeat;
+}
+
+.photo-editing-page {
+  background: var(--cream);
+}
+
+.photo-editing-steps,
+.photo-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.photo-step-card,
+.photo-price-card,
+.photo-upload-card {
+  background: var(--white);
+  border: 1px solid rgba(185, 150, 91, 0.16);
+  border-radius: 28px;
+  padding: 32px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.05);
+}
+
+.photo-step-card span,
+.photo-price-card span {
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.photo-step-card h3,
+.photo-price-card h3 {
+  margin-top: 14px;
+  margin-bottom: 12px;
+}
+
+.featured-photo-price {
+  background: var(--charcoal);
+  color: var(--white);
+}
+
+.featured-photo-price h3 {
+  color: var(--white);
+}
+
+.featured-photo-price p {
+  color: rgba(255,255,255,0.76);
+}
+
+.photo-upload-section {
+  background: var(--cream);
+}
+
+.photo-upload-card {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.form-group input[type="file"] {
+  padding: 18px;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .photo-editing-page,
+  .photo-pricing,
+  .photo-upload-section {
+    overflow-x: hidden;
+  }
+
+  .photo-editing-steps,
+  .photo-pricing-grid {
+    display: flex;
+    overflow-x: auto;
+    gap: 16px;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 18px;
+  }
+
+  .photo-step-card,
+  .photo-price-card {
+    flex: 0 0 84%;
+    scroll-snap-align: center;
+    padding: 24px !important;
+    border-radius: 24px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .photo-upload-card {
+    padding: 22px !important;
+    border-radius: 24px;
+  }
+
+  .photo-upload-card h2 {
+    font-size: 2rem !important;
+  }
+
+  .photo-editing-form .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .photo-editing-page::after,
+  .photo-pricing::after {
+    content: "Swipe to view options";
+    display: block;
+    width: 90%;
+    margin: -10px auto 28px;
+    color: var(--gray);
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+}
+
+/* Photo Editing Hero Image Override */
+.photo-editing-hero {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
+    url("../images/photo-editing-hero.jpg") center/cover no-repeat !important;
+}
+
+/* Photo Editing Hero Image Override */
+.photo-editing-hero {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
+    url("../images/photo-editing-hero.jpg") center/cover no-repeat !important;
+}
+
+/* Final Photo Editing Hero Override */
+.photo-editing-hero {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.72)),
+    url("../images/photo-editing-hero.jpg") center/cover no-repeat !important;
+}
