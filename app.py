@@ -518,6 +518,19 @@ def deactivate_client_preview(preview_id):
 
 
 
+def delete_client_preview(preview_id):
+    init_database()
+    with db_connect() as connection:
+        connection.execute(
+            """
+            DELETE FROM client_previews
+            WHERE id = ?
+            """,
+            (preview_id,),
+        )
+
+
+
 
 def normalize_prospect_text(value):
     return re.sub(r"[^a-z0-9]+", "", (value or "").lower())
@@ -1914,8 +1927,6 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
               <h1>Prospect Pipeline</h1>
               <div class="quick-actions">
                 <a class="btn" href="/admin/prospects/new">Add Prospect</a>
-                <a class="btn-small" href="/admin/research">Research Helper</a>
-                <a class="btn-small" href="/admin/prospects/import">Import Prospects</a>
                 <a class="btn-small" href="/admin/prospects/export">Export Prospects CSV</a>
               </div>
             </section>
@@ -2195,6 +2206,135 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             """,
         )
 
+    def _render_admin_overview(self):
+        leads = get_leads()
+        prospects = get_prospects()
+        active_leads = [lead for lead in leads if lead.get("status") != "Completed"]
+        completed_leads = [lead for lead in leads if lead.get("status") == "Completed"]
+
+        today = datetime.now().strftime("%Y-%m-%d")
+        new_leads = sum(1 for lead in active_leads if lead.get("status") == "New")
+        contacted_leads = sum(1 for lead in active_leads if lead.get("status") == "Contacted")
+        follow_up_due = sum(
+            1 for prospect in prospects
+            if prospect.get("next_follow_up") and prospect.get("next_follow_up") <= today
+        )
+        high_priority = sum(
+            1 for prospect in prospects
+            if (prospect.get("review_priority") or "").lower() == "high priority"
+        )
+        ready_to_contact = sum(
+            1 for prospect in prospects
+            if prospect.get("status") == "Ready to Contact"
+        )
+
+        summary_cards = f"""
+            <article><strong>{len(active_leads)}</strong><span>Active Leads</span></article>
+            <article><strong>{new_leads}</strong><span>New Leads</span></article>
+            <article><strong>{len(prospects)}</strong><span>Total Prospects</span></article>
+            <article><strong>{follow_up_due}</strong><span>Follow-Ups Due</span></article>
+            <article><strong>{high_priority}</strong><span>High Priority</span></article>
+            <article><strong>{len(completed_leads)}</strong><span>Completed Projects</span></article>
+        """
+
+        return self._admin_shell(
+            "Admin Overview",
+            f"""
+            <section class="hero">
+              <p>House of Visuals Command Center</p>
+              <h1>Admin Overview</h1>
+              <div class="quick-actions">
+                <a class="btn" href="/admin/leads">View Leads</a>
+                <a class="btn-small" href="/admin/prospects">View Prospects</a>
+                <a class="btn-small" href="/admin/research">Research Helper</a>
+              </div>
+            </section>
+
+            <section class="stats">{summary_cards}</section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Quick Actions</h2>
+                  <p>Jump into the most common admin tasks without hunting through the dashboard.</p>
+                </div>
+              </div>
+
+              <div class="admin-shortcuts">
+                <a class="admin-shortcut" href="/admin/leads">
+                  <strong>Leads</strong>
+                  <span>Review website inquiries, update statuses, and follow up with potential clients.</span>
+                </a>
+
+                <a class="admin-shortcut" href="/admin/prospects">
+                  <strong>Prospects</strong>
+                  <span>Track businesses you may want to contact and prioritize outreach opportunities.</span>
+                </a>
+
+                <a class="admin-shortcut" href="/admin/prospects/new">
+                  <strong>Add Prospect</strong>
+                  <span>Add a business manually to your prospect pipeline.</span>
+                </a>
+
+                <a class="admin-shortcut" href="/admin/research">
+                  <strong>Research Helper</strong>
+                  <span>Find possible clients and identify businesses that may need website or branding help.</span>
+                </a>
+
+                <a class="admin-shortcut" href="/admin/prospects/import">
+                  <strong>Import Prospects</strong>
+                  <span>Paste CSV data and add multiple prospects into the pipeline faster.</span>
+                </a>
+
+                <a class="admin-shortcut" href="/admin/client-previews">
+                  <strong>Client Previews</strong>
+                  <span>Manage private demo links and client preview pages.</span>
+                </a>
+
+                <a class="admin-shortcut" href="/admin/completed">
+                  <strong>Completed Projects</strong>
+                  <span>View leads that have been moved into the completed project log.</span>
+                </a>
+
+                <a class="admin-shortcut" href="/admin/prospects?status=Ready%20to%20Contact">
+                  <strong>Ready to Contact</strong>
+                  <span>See prospects that are ready for outreach.</span>
+                </a>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Today’s Focus</h2>
+                  <p>Use this snapshot to decide what needs attention first.</p>
+                </div>
+              </div>
+
+              <div class="message-grid">
+                <article class="message-card">
+                  <h3>Follow-Ups Due</h3>
+                  <p>{follow_up_due} prospect follow-up(s) are due today or overdue.</p>
+                  <a class="btn-small" href="/admin/prospects">View Prospects</a>
+                </article>
+
+                <article class="message-card">
+                  <h3>High Priority Prospects</h3>
+                  <p>{high_priority} prospect(s) are marked high priority for review.</p>
+                  <a class="btn-small" href="/admin/prospects">Review Pipeline</a>
+                </article>
+
+                <article class="message-card">
+                  <h3>Ready to Contact</h3>
+                  <p>{ready_to_contact} prospect(s) are ready for outreach.</p>
+                  <a class="btn-small" href="/admin/prospects?status=Ready%20to%20Contact">Open List</a>
+                </article>
+              </div>
+            </section>
+            """
+        )
+
+
     def _render_leads_dashboard(self):
         all_leads = get_leads()
         leads = [lead for lead in all_leads if lead.get("status") != "Completed"]
@@ -2312,8 +2452,6 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
               <h1>Leads Dashboard</h1>
               <div class="quick-actions">
                 <a class="btn" href="/contact.html">Add Lead</a>
-                <a class="btn-small" href="/admin/client-previews">Client Previews</a>
-                <a class="btn-small" href="/admin/completed">Completed Projects</a>
                 <a class="btn-small" href="/admin/leads/export">Export Leads CSV</a>
               </div>
             </section>
@@ -2471,14 +2609,12 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 '<span class="preview-disabled">No Loom Link</span>'
             )
 
-            deactivate_button = ""
-            if is_active:
-                deactivate_button = f"""
-                <form action="/admin/client-previews/deactivate" method="POST" class="inline-form">
-                  <input type="hidden" name="preview_id" value="{preview_id}">
-                  <button class="btn-small danger-btn" type="submit">Deactivate</button>
-                </form>
-                """
+            delete_button = f"""
+            <form action="/admin/client-previews/delete" method="POST" class="inline-form" onsubmit="return confirm('Delete this client preview permanently? This cannot be undone.');">
+              <input type="hidden" name="preview_id" value="{preview_id}">
+              <button class="btn-small danger-btn" type="submit">Delete</button>
+            </form>
+            """
 
             cards.append(
                 f"""
@@ -2494,7 +2630,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                   <div class="preview-actions">
                     {demo_button}
                     {loom_button}
-                    {deactivate_button}
+                    {delete_button}
                   </div>
 
                   <div class="preview-notes">
@@ -2699,6 +2835,11 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
         self._send_html(html)
 
     def _admin_shell(self, title, body):
+        current_path = self.path.split("?", 1)[0]
+
+        def nav_class(*paths):
+            return "active" if current_path in paths else ""
+
         return f"""
         <!doctype html>
         <html lang="en">
@@ -2810,6 +2951,13 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 align-items: center;
                 gap: 0.5rem;
                 flex-wrap: wrap;
+              }}
+
+              .admin-nav a.active {{
+                background: linear-gradient(135deg, #0f4a33, #1f7a57);
+                color: #fff;
+                border-color: rgba(201, 162, 79, 0.45);
+                box-shadow: 0 10px 18px rgba(15, 74, 51, 0.16);
               }}
 
               .admin-nav a[href="/admin/logout"] {{
@@ -3126,11 +3274,19 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
           </head>
           <body>
             <main class="wrap">
-              <nav class="admin-nav">
-                <a href="/admin">Leads</a>
-                <a href="/admin/prospects">Prospects</a>
-                <a href="/admin/prospects/import">Import</a>
-                <a href="/admin/logout">Logout</a>
+              <nav class="admin-nav" aria-label="Admin navigation">
+                <strong>House of Visuals Admin</strong>
+                <div>
+                  <a class="{nav_class('/admin', '/admin/')}" href="/admin">Overview</a>
+                  <a class="{nav_class('/admin/leads', '/admin/leads/')}" href="/admin/leads">Leads</a>
+                  <a class="{nav_class('/admin/prospects', '/admin/prospects/')}" href="/admin/prospects">Prospects</a>
+                  <a class="{nav_class('/admin/prospects/new', '/admin/prospects/new/')}" href="/admin/prospects/new">Add Prospect</a>
+                  <a class="{nav_class('/admin/prospects/import', '/admin/prospects/import/')}" href="/admin/prospects/import">Import</a>
+                  <a class="{nav_class('/admin/research', '/admin/research/')}" href="/admin/research">Research</a>
+                  <a class="{nav_class('/admin/client-previews', '/admin/client-previews/')}" href="/admin/client-previews">Client Previews</a>
+                  <a class="{nav_class('/admin/completed', '/admin/completed/')}" href="/admin/completed">Completed</a>
+                  <a href="/admin/logout">Logout</a>
+                </div>
               </nav>
               {body}
             </main>
@@ -3676,6 +3832,17 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 self.end_headers()
                 return
 
+            if request_path == "/admin/client-previews/delete":
+                if not self._admin_allowed():
+                    self._send_json({"ok": False, "message": "Admin access required."}, status=403)
+                    return
+                preview_id = int(first(fields, "preview_id"))
+                delete_client_preview(preview_id)
+                self.send_response(303)
+                self.send_header("Location", "/admin/client-previews")
+                self.end_headers()
+                return
+
             lead_id = create_lead(fields)
             self._send_inquiry_email(fields)
             update_lead_email_status(lead_id, "sent")
@@ -3848,7 +4015,14 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             self._send_json({"ok": True, "lead": lead, "statuses": DEFAULT_LEAD_STATUSES}, status=200)
             return
 
-        if request_path in {"/admin", "/admin/", "/admin/leads", "/admin/leads/"}:
+        if request_path in {"/admin", "/admin/"}:
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._send_html(self._render_admin_overview())
+            return
+
+        if request_path in {"/admin/leads", "/admin/leads/"}:
             if not self._admin_allowed():
                 self._send_admin_login_required()
                 return
