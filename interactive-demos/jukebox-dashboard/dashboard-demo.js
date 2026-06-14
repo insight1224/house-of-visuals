@@ -560,3 +560,35 @@ window.addEventListener("resize", () => {
     positionTourOverlay(target);
   }
 });
+
+const mobileDashboardGate = document.getElementById("mobileDashboardGate");
+const continueMobileDemo = document.getElementById("continueMobileDemo");
+
+function updateMobileDashboardGate() {
+  const isMobile = window.matchMedia("(max-width: 767px)").matches;
+  const wasDismissed =
+    sessionStorage.getItem("hovMobileDashboardDismissed") === "true";
+
+  if (!mobileDashboardGate) {
+    return;
+  }
+
+  if (isMobile && !wasDismissed) {
+    mobileDashboardGate.classList.remove("is-dismissed");
+    document.body.classList.add("mobile-demo-locked");
+  } else {
+    mobileDashboardGate.classList.add("is-dismissed");
+    document.body.classList.remove("mobile-demo-locked");
+  }
+}
+
+if (continueMobileDemo) {
+  continueMobileDemo.addEventListener("click", () => {
+    sessionStorage.setItem("hovMobileDashboardDismissed", "true");
+    mobileDashboardGate.classList.add("is-dismissed");
+    document.body.classList.remove("mobile-demo-locked");
+  });
+}
+
+window.addEventListener("resize", updateMobileDashboardGate);
+updateMobileDashboardGate();

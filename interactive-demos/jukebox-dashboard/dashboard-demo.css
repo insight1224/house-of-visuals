@@ -1143,3 +1143,119 @@ td {
     width: auto;
   }
 }
+
+/* Mobile dashboard experience notice */
+.mobile-dashboard-gate {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  body.mobile-demo-locked {
+    overflow: hidden;
+  }
+
+  .mobile-dashboard-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    background:
+      radial-gradient(circle at 50% 10%, rgba(213, 170, 69, 0.16), transparent 35%),
+      linear-gradient(180deg, #11100d, #080808);
+  }
+
+  .mobile-dashboard-gate.is-dismissed {
+    display: none;
+  }
+
+  .mobile-dashboard-gate-card {
+    width: min(100%, 480px);
+    padding: 34px 24px;
+    border: 1px solid rgba(213, 170, 69, 0.38);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at top right, rgba(213, 170, 69, 0.13), transparent 38%),
+      #151411;
+    box-shadow: 0 32px 90px rgba(0, 0, 0, 0.5);
+    text-align: center;
+  }
+
+  .mobile-gate-mark {
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #171006;
+    background: linear-gradient(145deg, #f1d58b, #bd8328);
+    font-family: "Cinzel", Georgia, serif;
+    font-weight: 800;
+    box-shadow: 0 18px 40px rgba(213, 170, 69, 0.2);
+  }
+
+  .mobile-dashboard-gate-card h1 {
+    margin: 0;
+    color: #fff8e9;
+    font-family: "Cinzel", Georgia, serif;
+    font-size: clamp(2rem, 10vw, 3rem);
+    line-height: 1.08;
+  }
+
+  .mobile-dashboard-gate-card > p:not(.section-kicker) {
+    margin: 18px 0 0;
+    color: #aaa297;
+    line-height: 1.7;
+  }
+
+  .mobile-gate-actions {
+    margin-top: 28px;
+    display: grid;
+    gap: 12px;
+  }
+
+  .mobile-gate-primary {
+    min-height: 50px;
+    width: 100%;
+    padding: 0 18px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .mobile-gate-primary {
+    border: 1px solid rgba(241, 213, 139, 0.7);
+    color: #171006;
+    background: linear-gradient(135deg, #f1d58b, #c9912d);
+  }
+
+  .mobile-dashboard-gate-card small {
+    display: block;
+    margin-top: 20px;
+    color: #746e65;
+    line-height: 1.5;
+  }
+}
+
+/* Force dashboard to remain desktop/tablet only on phones */
+@media (max-width: 767px) {
+  .mobile-dashboard-gate,
+  .mobile-dashboard-gate.is-dismissed {
+    display: flex !important;
+  }
+
+  .demo-app,
+  #welcomeModal,
+  #actionModal,
+  #tourOverlay,
+  #demoToast {
+    display: none !important;
+  }
+}
