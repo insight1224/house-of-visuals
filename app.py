@@ -3847,13 +3847,28 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 suggested_offer = many_offer_values(fields)
                 recommended_demo = first(fields, "recommended_demo")
 
-                if not search_query:
-                    search_query = " ".join(part for part in [industry, "in", location] if part).strip()
+                if search_query and location:
+                    location_lower = location.lower()
+                    query_lower = search_query.lower()
+
+                    if location_lower not in query_lower:
+                        search_query = f"{search_query} in {location}".strip()
+                elif not search_query:
+                    search_query = " ".join(
+                        part for part in [industry, "in", location] if part
+                    ).strip()
 
                 if not search_query:
                     raise RuntimeError("Enter a search query, or enter both industry and location.")
 
-                places = search_google_places_text(search_query, first(fields, "max_results") or 10)
+                print(f"Google Places search query: {search_query}")
+
+                places = search_google_places_text(
+                    search_query,
+                    first(fields, "max_results") or 10,
+                )
+
+                print(f"Google Places returned: {len(places)} places")
                 target_mode = first(fields, "target_mode") or "needs_help"
                 min_score = first(fields, "min_score") or 0
 
