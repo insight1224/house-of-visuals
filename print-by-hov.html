@@ -386,13 +386,63 @@
           </p>
         </div>
 
-        <div class="print-testimonial-coming-soon">
-          <div class="print-testimonial-stars" aria-hidden="true">★★★★★</div>
-          <h3>Print Reviews Coming Soon</h3>
-          <p>
-            We are building our collection of verified Print by HOV client
-            experiences. Completed print clients can submit feedback for review.
+        <article class="print-testimonial-coming-soon print-testimonial-card">
+          <div class="print-testimonial-stars" aria-label="5 out of 5 stars">★★★★★</div>
+
+          <p class="print-testimonial-service">
+            Custom T-Shirts &amp; Branded Merchandise
           </p>
+
+          <blockquote class="print-testimonial-quote">
+            <div class="print-testimonial-preview">
+              <p>
+                A huge thank you to House of Visuals for bringing the vision of
+                Jukebox Lounge NC to life!
+              </p>
+
+              <p>
+                They designed, printed, pressed, and delivered our official
+                merchandise with creativity, professionalism, and incredible
+                attention to detail.
+              </p>
+            </div>
+
+            <div class="print-testimonial-full" id="print-testimonial-keeva" hidden>
+              <p>
+                Not only did they create and manage my website dashboard, but they
+                also designed, printed, pressed, and delivered our official Jukebox
+                Lounge NC merchandise. The creativity, professionalism, and attention
+                to detail exceeded my expectations. Every design and sample they
+                presented was so good that I wanted every single one!
+              </p>
+
+              <p>
+                It’s rare to find someone who can take your vision, elevate it, and
+                then execute it from start to finish. Thank you for your hard work,
+                dedication, and for helping build the Jukebox Lounge NC brand. I truly
+                appreciate you!
+              </p>
+
+              <p>
+                If you’re looking for quality design work, branding, merchandise, or
+                website services, I highly recommend House of Visuals.
+              </p>
+            </div>
+          </blockquote>
+
+          <button
+            class="print-testimonial-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="print-testimonial-keeva"
+          >
+            Read Full Testimonial
+          </button>
+
+          <div class="print-testimonial-author">
+            <strong>Keeva Nichols</strong>
+            <span>The Jukebox Lounge NC · Custom T-Shirts &amp; Branded Merchandise</span>
+          </div>
 
           <a
             class="print-testimonial-button"
@@ -400,7 +450,7 @@
           >
             Submit a Print Testimonial
           </a>
-        </div>
+        </article>
       </div>
     </section>
 
@@ -591,6 +641,26 @@
         });
       });
     }
+    const printTestimonialToggle = document.querySelector(".print-testimonial-toggle");
+    const printTestimonialFull = document.querySelector("#print-testimonial-keeva");
+
+    if (printTestimonialToggle && printTestimonialFull) {
+      printTestimonialToggle.addEventListener("click", () => {
+        const isExpanded =
+          printTestimonialToggle.getAttribute("aria-expanded") === "true";
+
+        printTestimonialToggle.setAttribute(
+          "aria-expanded",
+          isExpanded ? "false" : "true"
+        );
+
+        printTestimonialFull.hidden = isExpanded;
+        printTestimonialToggle.textContent = isExpanded
+          ? "Read Full Testimonial"
+          : "Show Less";
+      });
+    }
+
   </script>
 </body>
 </html>
