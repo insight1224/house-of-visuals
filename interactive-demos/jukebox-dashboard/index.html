@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Interactive Dashboard Demo | Jukebox Lounge NC</title>
+  <meta
+    name="description"
+    content="Explore an interactive sample business dashboard created by House of Visuals for event and hospitality brands."
+  >
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="./dashboard-demo.css">
+</head>
+
+<body>
+  <div class="demo-app">
+
+    <aside class="demo-sidebar" id="demoSidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark">JL</div>
+        <div>
+          <strong>Jukebox Lounge NC</strong>
+          <span>Interactive Demo</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Dashboard sections">
+        <button class="nav-item active" type="button" data-view="overview">
+          <span class="nav-icon">◫</span>
+          Overview
+        </button>
+
+        <button class="nav-item" type="button" data-view="events">
+          <span class="nav-icon">◈</span>
+          Events
+        </button>
+
+        <button class="nav-item" type="button" data-view="tickets">
+          <span class="nav-icon">◎</span>
+          Tickets & Attendance
+        </button>
+
+        <button class="nav-item" type="button" data-view="members">
+          <span class="nav-icon">◇</span>
+          Members
+        </button>
+
+        <button class="nav-item" type="button" data-view="revenue">
+          <span class="nav-icon">$</span>
+          Revenue
+        </button>
+
+        <button class="nav-item" type="button" data-view="messages">
+          <span class="nav-icon">✉</span>
+          Messages
+        </button>
+
+        <button class="nav-item" type="button" data-view="settings">
+          <span class="nav-icon">⚙</span>
+          Settings
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="sample-mode-card">
+          <span>Demo Mode</span>
+          <p>Sample information only. No real client data is displayed.</p>
+        </div>
+
+        <a class="back-to-hov" href="/our-work.html">
+          ← Back to House of Visuals
+        </a>
+      </div>
+    </aside>
+
+    <div class="demo-main">
+      <header class="demo-topbar">
+        <button
+          class="mobile-menu-button"
+          id="mobileMenuButton"
+          type="button"
+          aria-label="Open dashboard navigation"
+          aria-expanded="false"
+        >
+          Menu
+        </button>
+
+        <div class="topbar-title">
+          <p>Business Operations Dashboard</p>
+          <h1 id="pageTitle">Overview</h1>
+        </div>
+
+        <div class="topbar-actions">
+          <button class="tour-button" id="startTourButton" type="button">
+            Start Guided Tour
+          </button>
+
+          <button class="reset-button" id="resetDemoButton" type="button">
+            Reset Demo
+          </button>
+
+          <div class="demo-user">
+            <span>Demo User</span>
+            <strong>DU</strong>
+          </div>
+        </div>
+      </header>
+
+      <div class="demo-notice">
+        <strong>Interactive Dashboard Demo</strong>
+        <span>
+          Explore the dashboard using sample data. Changes made here are temporary.
+        </span>
+      </div>
+
+      <main class="dashboard-content">
+
+        <!-- OVERVIEW -->
+        <section class="dashboard-view active" id="view-overview" data-title="Overview">
+          <div class="welcome-row" data-tour="welcome">
+            <div>
+              <p class="section-kicker">Welcome back</p>
+              <h2>Here’s what’s happening with your business.</h2>
+              <p>
+                Review upcoming events, attendance, membership activity, and revenue
+                from one organized dashboard.
+              </p>
+            </div>
+
+            <button class="primary-action" type="button" data-demo-action="create-event">
+              + Create Sample Event
+            </button>
+          </div>
+
+          <div class="metric-grid" data-tour="metrics">
+            <article class="metric-card">
+              <span>Tickets Sold</span>
+              <strong id="metricTickets">248</strong>
+              <small>Across active sample events</small>
+            </article>
+
+            <article class="metric-card">
+              <span>Estimated Attendance</span>
+              <strong id="metricAttendance">286</strong>
+              <small>Includes VIP guest allowances</small>
+            </article>
+
+            <article class="metric-card">
+              <span>Active Members</span>
+              <strong id="metricMembers">34</strong>
+              <small>Jukebox Circle sample members</small>
+            </article>
+
+            <article class="metric-card featured">
+              <span>Total Revenue</span>
+              <strong id="metricRevenue">$8,740</strong>
+              <small>Sample ticket and membership revenue</small>
+            </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <section class="dashboard-panel event-panel" data-tour="events">
+              <div class="panel-heading">
+                <div>
+                  <p class="section-kicker">Event Management</p>
+                  <h3>Upcoming Events</h3>
+                </div>
+
+                <button class="text-button" type="button" data-switch-view="events">
+                  View all
+                </button>
+              </div>
+
+              <div class="event-list" id="overviewEventList">
+                <article class="event-row">
+                  <div class="event-date">
+                    <strong>20</strong>
+                    <span>JUN</span>
+                  </div>
+
+                  <div class="event-details">
+                    <h4>Juneteenth Celebration</h4>
+                    <p>Friday · 7:00 PM · Downtown Durham</p>
+                  </div>
+
+                  <div class="event-progress">
+                    <span>86 tickets</span>
+                    <div class="progress-track">
+                      <div class="progress-fill" style="width: 72%"></div>
+                    </div>
+                  </div>
+
+                  <span class="status-badge upcoming">Upcoming</span>
+                </article>
+
+                <article class="event-row">
+                  <div class="event-date">
+                    <strong>18</strong>
+                    <span>JUL</span>
+                  </div>
+
+                  <div class="event-details">
+                    <h4>Quiet Storm Live</h4>
+                    <p>Saturday · 8:00 PM · Durham Event Hall</p>
+                  </div>
+
+                  <div class="event-progress">
+                    <span>64 tickets</span>
+                    <div class="progress-track">
+                      <div class="progress-fill" style="width: 54%"></div>
+                    </div>
+                  </div>
+
+                  <span class="status-badge upcoming">Upcoming</span>
+                </article>
+
+                <article class="event-row">
+                  <div class="event-date">
+                    <strong>22</strong>
+                    <span>AUG</span>
+                  </div>
+
+                  <div class="event-details">
+                    <h4>Battle of the DJs: Summer Edition</h4>
+                    <p>Friday · 9:00 PM · Sample Venue</p>
+                  </div>
+
+                  <div class="event-progress">
+                    <span>98 tickets</span>
+                    <div class="progress-track">
+                      <div class="progress-fill" style="width: 81%"></div>
+                    </div>
+                  </div>
+
+                  <span class="status-badge featured">Featured</span>
+                </article>
+              </div>
+            </section>
+
+            <section class="dashboard-panel revenue-panel" data-tour="revenue">
+              <div class="panel-heading">
+                <div>
+                  <p class="section-kicker">Revenue Overview</p>
+                  <h3>Monthly Performance</h3>
+                </div>
+
+                <select aria-label="Revenue reporting period">
+                  <option>Last 6 months</option>
+                  <option>Last 3 months</option>
+                  <option>This year</option>
+                </select>
+              </div>
+
+              <div class="revenue-chart" aria-label="Sample revenue chart">
+                <div class="chart-column">
+                  <div class="chart-bar" style="height: 42%"></div>
+                  <span>JAN</span>
+                </div>
+                <div class="chart-column">
+                  <div class="chart-bar" style="height: 55%"></div>
+                  <span>FEB</span>
+                </div>
+                <div class="chart-column">
+                  <div class="chart-bar" style="height: 48%"></div>
+                  <span>MAR</span>
+                </div>
+                <div class="chart-column">
+                  <div class="chart-bar" style="height: 73%"></div>
+                  <span>APR</span>
+                </div>
+                <div class="chart-column">
+                  <div class="chart-bar" style="height: 62%"></div>
+                  <span>MAY</span>
+                </div>
+                <div class="chart-column">
+                  <div class="chart-bar highlighted" style="height: 91%"></div>
+                  <span>JUN</span>
+                </div>
+              </div>
+
+              <div class="revenue-summary">
+                <div>
+                  <span>Ticket Revenue</span>
+                  <strong>$7,980</strong>
+                </div>
+                <div>
+                  <span>Membership Revenue</span>
+                  <strong>$760</strong>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="dashboard-grid lower-grid">
+            <section class="dashboard-panel" data-tour="activity">
+              <div class="panel-heading">
+                <div>
+                  <p class="section-kicker">Recent Activity</p>
+                  <h3>Latest Updates</h3>
+                </div>
+              </div>
+
+              <div class="activity-list">
+                <article>
+                  <span class="activity-dot"></span>
+                  <div>
+                    <strong>12 new tickets sold</strong>
+                    <p>Juneteenth Celebration · 18 minutes ago</p>
+                  </div>
+                </article>
+
+                <article>
+                  <span class="activity-dot"></span>
+                  <div>
+                    <strong>New membership started</strong>
+                    <p>Jukebox Circle · 1 hour ago</p>
+                  </div>
+                </article>
+
+                <article>
+                  <span class="activity-dot"></span>
+                  <div>
+                    <strong>Event expense added</strong>
+                    <p>Venue deposit · $450 · 3 hours ago</p>
+                  </div>
+                </article>
+              </div>
+            </section>
+
+            <section class="dashboard-panel" data-tour="quick-actions">
+              <div class="panel-heading">
+                <div>
+                  <p class="section-kicker">Quick Actions</p>
+                  <h3>Manage Your Business</h3>
+                </div>
+              </div>
+
+              <div class="quick-action-grid">
+                <button type="button" data-demo-action="add-ticket">Add Ticket Sale</button>
+                <button type="button" data-demo-action="add-member">Add Member</button>
+                <button type="button" data-demo-action="add-expense">Add Expense</button>
+                <button type="button" data-switch-view="messages">View Messages</button>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- EVENTS -->
+        <section class="dashboard-view" id="view-events" data-title="Events">
+          <div class="view-heading">
+            <div>
+              <p class="section-kicker">Event Management</p>
+              <h2>Events</h2>
+              <p>Create, edit, and organize sample events.</p>
+            </div>
+
+            <button class="primary-action" type="button" data-demo-action="create-event">
+              + Add Sample Event
+            </button>
+          </div>
+
+          <div class="dashboard-panel">
+            <div class="table-toolbar">
+              <input type="search" placeholder="Search sample events..." id="eventSearch">
+              <select id="eventStatusFilter">
+                <option value="all">All statuses</option>
+                <option value="Upcoming">Upcoming</option>
+                <option value="Completed">Completed</option>
+                <option value="Draft">Draft</option>
+              </select>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Event</th>
+                    <th>Date</th>
+                    <th>Tickets</th>
+                    <th>Revenue</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="eventsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TICKETS -->
+        <section class="dashboard-view" id="view-tickets" data-title="Tickets & Attendance">
+          <div class="view-heading">
+            <div>
+              <p class="section-kicker">Sales & Check-In</p>
+              <h2>Tickets & Attendance</h2>
+              <p>Review sample ticket sales, capacity, and expected attendance.</p>
+            </div>
+
+            <button class="primary-action" type="button" data-demo-action="add-ticket">
+              + Add Sample Ticket Sale
+            </button>
+          </div>
+
+          <div class="metric-grid compact">
+            <article class="metric-card">
+              <span>General Admission</span>
+              <strong>196</strong>
+              <small>Sample tickets</small>
+            </article>
+            <article class="metric-card">
+              <span>VIP Sections</span>
+              <strong>18</strong>
+              <small>Sample VIP purchases</small>
+            </article>
+            <article class="metric-card">
+              <span>Expected Guests</span>
+              <strong>286</strong>
+              <small>Ticket rules applied</small>
+            </article>
+          </div>
+
+          <div class="dashboard-panel placeholder-panel">
+            <h3>Attendance Breakdown</h3>
+            <p>
+              In a live client dashboard, this area can include ticket types,
+              check-in status, guest lists, attendance multipliers, and event capacity.
+            </p>
+          </div>
+        </section>
+
+        <!-- MEMBERS -->
+        <section class="dashboard-view" id="view-members" data-title="Members">
+          <div class="view-heading">
+            <div>
+              <p class="section-kicker">Customer Management</p>
+              <h2>Members</h2>
+              <p>Manage sample memberships and customer activity.</p>
+            </div>
+
+            <button class="primary-action" type="button" data-demo-action="add-member">
+              + Add Sample Member
+            </button>
+          </div>
+
+          <div class="dashboard-panel placeholder-panel">
+            <h3>Jukebox Circle Members</h3>
+            <p>
+              Search members, review membership status, track payments, add notes,
+              and manage renewals from one place.
+            </p>
+          </div>
+        </section>
+
+        <!-- REVENUE -->
+        <section class="dashboard-view" id="view-revenue" data-title="Revenue">
+          <div class="view-heading">
+            <div>
+              <p class="section-kicker">Financial Overview</p>
+              <h2>Revenue & Expenses</h2>
+              <p>Explore sample income, expense, and profitability tracking.</p>
+            </div>
+
+            <button class="primary-action" type="button" data-demo-action="add-expense">
+              + Add Sample Expense
+            </button>
+          </div>
+
+          <div class="metric-grid compact">
+            <article class="metric-card featured">
+              <span>Total Revenue</span>
+              <strong>$8,740</strong>
+              <small>Sample reporting period</small>
+            </article>
+            <article class="metric-card">
+              <span>Total Expenses</span>
+              <strong>$3,125</strong>
+              <small>Sample business expenses</small>
+            </article>
+            <article class="metric-card">
+              <span>Estimated Profit</span>
+              <strong>$5,615</strong>
+              <small>Revenue minus expenses</small>
+            </article>
+          </div>
+
+          <div class="dashboard-panel placeholder-panel">
+            <h3>Financial Reporting</h3>
+            <p>
+              A production dashboard can support event income, cash revenue,
+              business expenses, membership payments, and downloadable reports.
+            </p>
+          </div>
+        </section>
+
+        <!-- MESSAGES -->
+        <section class="dashboard-view" id="view-messages" data-title="Messages">
+          <div class="view-heading">
+            <div>
+              <p class="section-kicker">Communication Center</p>
+              <h2>Messages</h2>
+              <p>Review sample customer, vendor, and business inquiries.</p>
+            </div>
+          </div>
+
+          <div class="dashboard-panel placeholder-panel">
+            <h3>Inbox & Follow-Up</h3>
+            <p>
+              Messages can be organized by inquiry type, assigned a status,
+              and marked for follow-up without leaving the dashboard.
+            </p>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section class="dashboard-view" id="view-settings" data-title="Settings">
+          <div class="view-heading">
+            <div>
+              <p class="section-kicker">Dashboard Customization</p>
+              <h2>Settings</h2>
+              <p>See how dashboard options can be customized for each business.</p>
+            </div>
+          </div>
+
+          <div class="dashboard-panel settings-grid">
+            <label>
+              Dashboard accent
+              <select>
+                <option>Gold</option>
+                <option>Green</option>
+                <option>Blue</option>
+              </select>
+            </label>
+
+            <label>
+              Default report period
+              <select>
+                <option>Last 30 days</option>
+                <option>Last 90 days</option>
+                <option>This year</option>
+              </select>
+            </label>
+
+            <button class="disabled-live-action" type="button">
+              Connect Payment Provider
+            </button>
+
+            <p class="disabled-note">
+              Live integrations are disabled in the public demo.
+            </p>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- WELCOME MODAL -->
+  <div class="demo-modal is-open" id="welcomeModal" aria-hidden="false">
+    <div class="modal-card welcome-modal-card">
+      <button class="modal-close" type="button" data-close-modal aria-label="Close">
+        ×
+      </button>
+
+      <p class="section-kicker">House of Visuals Interactive Demo</p>
+      <h2>Experience the dashboard.</h2>
+
+      <p>
+        This interactive environment uses sample information so you can explore
+        how a custom business dashboard can organize events, sales, attendance,
+        members, revenue, and communication.
+      </p>
+
+      <div class="welcome-options">
+        <button class="primary-action" id="welcomeStartTour" type="button">
+          Start Guided Tour
+        </button>
+
+        <button class="secondary-action" id="exploreDemoButton" type="button">
+          Explore on My Own
+        </button>
+      </div>
+
+      <small>
+        Demo mode: no real client information, payments, or private records are included.
+      </small>
+    </div>
+  </div>
+
+  <!-- ACTION MODAL -->
+  <div class="demo-modal" id="actionModal" aria-hidden="true">
+    <div class="modal-card">
+      <button class="modal-close" type="button" data-close-modal aria-label="Close">
+        ×
+      </button>
+
+      <p class="section-kicker">Interactive Demo</p>
+      <h2 id="actionModalTitle">Sample Action</h2>
+      <p id="actionModalText">
+        This action is available for demonstration purposes.
+      </p>
+
+      <form id="demoActionForm">
+        <label>
+          Sample name or description
+          <input id="demoActionInput" type="text" required>
+        </label>
+
+        <button class="primary-action" type="submit">
+          Save Sample Change
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOUR -->
+  <div class="tour-overlay" id="tourOverlay" aria-hidden="true">
+    <div class="tour-card">
+      <p class="section-kicker">Guided Dashboard Tour</p>
+      <span id="tourStepLabel">Step 1 of 6</span>
+      <h2 id="tourTitle">Dashboard Overview</h2>
+      <p id="tourDescription">
+        See the most important business information at a glance.
+      </p>
+
+      <div class="tour-actions">
+        <button class="secondary-action" id="tourBackButton" type="button">
+          Back
+        </button>
+
+        <button class="secondary-action" id="endTourButton" type="button">
+          End Tour
+        </button>
+
+        <button class="primary-action" id="tourNextButton" type="button">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="demoToast" role="status" aria-live="polite"></div>
+
+  <script src="./dashboard-demo.js"></script>
+</body>
+</html>

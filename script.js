@@ -966,3 +966,14 @@ document.addEventListener("click", function (event) {
   button.setAttribute("aria-expanded", isExpanded ? "true" : "false");
   button.textContent = isExpanded ? "Show Less" : "Read Full Testimonial";
 });
+
+// Preselect testimonial division from the page link
+if (testimonialForm) {
+  const testimonialParams = new URLSearchParams(window.location.search);
+  const requestedDivision = testimonialParams.get("division");
+  const divisionSelect = testimonialForm.querySelector('[name="testimonial_division"]');
+
+  if (divisionSelect && requestedDivision === "print-by-hov") {
+    divisionSelect.value = "Print by HOV";
+  }
+}

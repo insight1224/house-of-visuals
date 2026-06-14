@@ -458,6 +458,63 @@ def update_prospect(prospect_id, fields):
         )
 
 
+def sync_client_preview_folders():
+    """Automatically add client-preview folders to the admin directory."""
+    preview_root = PROJECT_DIR / "client-preview"
+
+    if not preview_root.exists():
+        return
+
+    init_database()
+
+    with db_connect() as connection:
+        existing_links = {
+            (row["demo_link"] or "").rstrip("/")
+            for row in connection.execute(
+                "SELECT demo_link FROM client_previews"
+            ).fetchall()
+        }
+
+        now = datetime.now().isoformat(timespec="seconds")
+
+        for folder in sorted(preview_root.iterdir()):
+            if not folder.is_dir() or folder.name.startswith("."):
+                continue
+
+            slug = folder.name
+            demo_link = f"/client-preview/{slug}/"
+            client_path = f"/client-preview/{slug}/"
+
+            already_exists = any(
+                existing_link == client_path.rstrip("/")
+                or existing_link.startswith(client_path.rstrip("/") + "/")
+                for existing_link in existing_links
+            )
+
+            if already_exists:
+                continue
+
+            business_name = slug.replace("-", " ").replace("_", " ").title()
+
+            connection.execute(
+                """
+                INSERT INTO client_previews (
+                    business_name,
+                    demo_link,
+                    loom_link,
+                    notes,
+                    is_active,
+                    created_at,
+                    updated_at
+                )
+                VALUES (?, ?, '', '', 1, ?, ?)
+                """,
+                (business_name, demo_link, now, now),
+            )
+
+            existing_links.add(demo_link.rstrip("/"))
+
+
 def create_client_preview(fields):
     business_name = first(fields, "business_name") or "Unnamed Business"
     demo_link = first(fields, "demo_link")
@@ -502,6 +559,52 @@ def get_client_previews(include_inactive=True):
                 """
             ).fetchall()
         return [dict(row) for row in rows]
+
+
+def get_client_preview(preview_id):
+    init_database()
+    with db_connect() as connection:
+        row = connection.execute(
+            """
+            SELECT * FROM client_previews
+            WHERE id = ?
+            """,
+            (preview_id,),
+        ).fetchone()
+
+    return dict(row) if row else None
+
+
+def update_client_preview(preview_id, fields):
+    business_name = first(fields, "business_name") or "Unnamed Business"
+    demo_link = first(fields, "demo_link")
+    loom_link = first(fields, "loom_link")
+    notes = first(fields, "notes")
+
+    if not demo_link:
+        raise ValueError("Client preview link is required.")
+
+    init_database()
+    with db_connect() as connection:
+        connection.execute(
+            """
+            UPDATE client_previews
+            SET business_name = ?,
+                demo_link = ?,
+                loom_link = ?,
+                notes = ?,
+                updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                business_name,
+                demo_link,
+                loom_link,
+                notes,
+                datetime.now().isoformat(timespec="seconds"),
+                preview_id,
+            ),
+        )
 
 
 def deactivate_client_preview(preview_id):
@@ -2584,7 +2687,60 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
         )
         self._send_html(html)
 
+    def _render_client_preview_landing_page(self, filename, client_slug):
+        page_path = PROJECT_DIR / filename
+
+        if not page_path.exists():
+            self._send_html("<h1>Client preview not found.</h1>", status=404)
+            return
+
+        html = page_path.read_text(encoding="utf-8")
+        loom_link = ""
+
+        for preview in get_client_previews(include_inactive=False):
+            demo_link = (preview.get("demo_link") or "").lower()
+            business_name = (preview.get("business_name") or "").lower()
+
+            slug_match = f"/client-preview/{client_slug}" in demo_link
+            name_match = client_slug.replace("-", " ") in business_name
+
+            if slug_match or name_match:
+                loom_link = (preview.get("loom_link") or "").strip()
+                break
+
+        loom_button = ""
+
+        if loom_link:
+            loom_button = (
+                f'<a class="preview-btn secondary" '
+                f'href="{escape(loom_link, quote=True)}" '
+                f'target="_blank" rel="noopener noreferrer">'
+                f'Watch Loom Walkthrough</a>'
+            )
+
+        loom_placeholder = "<!-- CLIENT_LOOM_BUTTON -->"
+
+        if loom_placeholder in html:
+            html = html.replace(loom_placeholder, loom_button)
+        elif loom_button:
+            actions_marker = '<div class="preview-actions">'
+            actions_start = html.find(actions_marker)
+
+            if actions_start != -1:
+                actions_end = html.find("</div>", actions_start)
+
+                if actions_end != -1:
+                    html = (
+                        html[:actions_end]
+                        + f"        {loom_button}\n      "
+                        + html[actions_end:]
+                    )
+
+        self._send_html(html)
+
+
     def _render_client_previews(self):
+        sync_client_preview_folders()
         previews = get_client_previews(include_inactive=True)
         cards = []
 
@@ -2598,9 +2754,9 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             status_label = "Active" if is_active else "Inactive"
 
             demo_button = (
-                f'<a class="btn-small" href="{escape(demo_link, quote=True)}" target="_blank" rel="noopener">Open Demo</a>'
+                f'<a class="btn-small" href="{escape(demo_link, quote=True)}" target="_blank" rel="noopener">View Client Preview</a>'
                 if demo_link else
-                '<span class="preview-disabled">No Demo Link</span>'
+                '<span class="preview-disabled">No Preview Link</span>'
             )
 
             loom_button = (
@@ -2621,7 +2777,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 <article class="preview-card {'inactive-card' if not is_active else ''}">
                   <div class="preview-card-head">
                     <div>
-                      <p class="preview-type">Client Demo</p>
+                      <p class="preview-type">Client Preview</p>
                       <h2>{business_name}</h2>
                     </div>
                     <span class="status">{status_label}</span>
@@ -2630,6 +2786,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                   <div class="preview-actions">
                     {demo_button}
                     {loom_button}
+                    <a class="btn-small" href="/admin/client-previews/{preview_id}/edit">Edit</a>
                     {delete_button}
                   </div>
 
@@ -2647,17 +2804,17 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 <article class="preview-card">
                   <div class="preview-card-head">
                     <div>
-                      <p class="preview-type">Client Demo</p>
-                      <h2>No client demos added yet</h2>
+                      <p class="preview-type">Client Preview</p>
+                      <h2>No client previews added yet</h2>
                     </div>
                   </div>
-                  <p class="preview-empty">Click “Add Client Demo” to save your first demo link.</p>
+                  <p class="preview-empty">Click “Add Client Preview” to save your first demo link.</p>
                 </article>
                 """
             )
 
         html = self._admin_shell(
-            "Client Previews",
+            "Client Preview Directory",
             f"""
             <style>
               .preview-grid {{
@@ -2768,15 +2925,14 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
             <section class="hero">
               <p>House of Visuals Admin</p>
-              <h1>Client Demo Tracker</h1>
-              <a class="btn" href="/admin/client-previews/new">Add Client Demo</a>
+              <h1>Client Preview Directory</h1>
             </section>
 
             <section class="panel">
               <div class="panel-head">
                 <div>
-                  <h2>Saved Client Demos</h2>
-                  <p>Save demo links, Loom walkthroughs, and notes for client previews you send out.</p>
+                  <h2>Client Preview Directory</h2>
+                  <p>Manage each client’s preview page, Loom walkthrough, internal notes, and review link in one place.</p>
                 </div>
               </div>
 
@@ -2790,19 +2946,19 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
     def _render_client_preview_form(self):
         html = self._admin_shell(
-            "Add Client Demo",
+            "Add Client Preview",
             """
             <section class="hero">
               <p>House of Visuals Admin</p>
-              <h1>Add Client Demo</h1>
-              <a class="btn" href="/admin/client-previews">Back to Demo Tracker</a>
+              <h1>Add Client Preview</h1>
+              <a class="btn" href="/admin/client-previews">Back to Client Directory</a>
             </section>
 
             <section class="panel">
               <div class="panel-head">
                 <div>
-                  <h2>New Client Demo</h2>
-                  <p>Add the business name, demo link, Loom walkthrough, and any notes you want to track.</p>
+                  <h2>New Client Preview</h2>
+                  <p>Add the client name, client-facing preview page, optional Loom walkthrough, and internal notes.</p>
                 </div>
               </div>
 
@@ -2813,8 +2969,8 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 </label>
 
                 <label>
-                  Demo Link
-                  <input type="url" name="demo_link" placeholder="https://houseofvisualsco.com/client-preview/client-name" required>
+                  Client Preview Link
+                  <input type="text" name="demo_link" placeholder="/client-preview/client-name/" required>
                 </label>
 
                 <label>
@@ -2827,11 +2983,80 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                   <textarea name="notes" placeholder="Example: Sent preview link and Loom walkthrough on June 2. Waiting for client feedback."></textarea>
                 </label>
 
-                <button class="btn" type="submit">Save Client Demo</button>
+                <button class="btn" type="submit">Save Client Preview</button>
               </form>
             </section>
             """,
         )
+        self._send_html(html)
+
+    def _render_client_preview_edit_form(self, preview_id):
+        preview = get_client_preview(preview_id)
+
+        if not preview:
+            self._send_html(
+                self._admin_shell(
+                    "Client Preview Not Found",
+                    """
+                    <section class="panel">
+                      <h1>Client preview not found.</h1>
+                      <a class="btn" href="/admin/client-previews">Back to Client Directory</a>
+                    </section>
+                    """,
+                ),
+                status=404,
+            )
+            return
+
+        business_name = escape(preview.get("business_name") or "", quote=True)
+        demo_link = escape(preview.get("demo_link") or "", quote=True)
+        loom_link = escape(preview.get("loom_link") or "", quote=True)
+        notes = escape(preview.get("notes") or "")
+
+        html = self._admin_shell(
+            "Edit Client Preview",
+            f"""
+            <section class="hero">
+              <p>House of Visuals Admin</p>
+              <h1>Edit Client Preview</h1>
+              <a class="btn" href="/admin/client-previews">Back to Client Directory</a>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>{escape(preview.get("business_name") or "Client Preview")}</h2>
+                  <p>Update the client preview link, Loom walkthrough, business name, or internal notes.</p>
+                </div>
+              </div>
+
+              <form method="POST" action="/admin/client-previews/{preview_id}/edit">
+                <label>
+                  Business Name
+                  <input type="text" name="business_name" value="{business_name}" required>
+                </label>
+
+                <label>
+                  Client Preview Link
+                  <input type="text" name="demo_link" value="{demo_link}" required>
+                </label>
+
+                <label>
+                  Loom Link
+                  <input type="url" name="loom_link" value="{loom_link}">
+                </label>
+
+                <label>
+                  Notes
+                  <textarea name="notes" rows="8">{notes}</textarea>
+                </label>
+
+                <button class="btn" type="submit">Save Changes</button>
+              </form>
+            </section>
+            """,
+        )
+
         self._send_html(html)
 
     def _admin_shell(self, title, body):
@@ -3511,6 +3736,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             f"Website/Social Link: {first('website_social_link') or '-'}",
             "",
             "Testimonial Details",
+            f"Division: {first('testimonial_division') or 'House of Visuals'}",
             f"Service Received: {first('service_received')}",
             f"Star Rating: {first('star_rating')} / 5",
             f"Permission Granted: {first('permission') or 'No'}",
@@ -3520,7 +3746,8 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
         ]
 
         message = EmailMessage()
-        message["Subject"] = f"New Testimonial: {first('full_name') or 'Website Submission'}"
+        division = first("testimonial_division") or "House of Visuals"
+        message["Subject"] = f"New {division} Testimonial: {first('full_name') or 'Website Submission'}"
         message["From"] = smtp_from
         message["To"] = testimonial_to
         message.set_content("\n".join(lines))
@@ -3767,7 +3994,21 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 self._send_json({"ok": False, "message": str(error)}, status=400)
             return
 
-        if request_path not in {"/api/inquiry", "/api/testimonial", "/api/leads/update", "/api/client-feedback", "/admin/client-previews/new", "/admin/client-previews/deactivate"}:
+        if (
+            request_path not in {
+                "/api/inquiry",
+                "/api/testimonial",
+                "/api/leads/update",
+                "/api/client-feedback",
+                "/admin/client-previews/new",
+                "/admin/client-previews/deactivate",
+                "/admin/client-previews/delete",
+            }
+            and not (
+                request_path.startswith("/admin/client-previews/")
+                and request_path.endswith("/edit")
+            )
+        ):
             self._send_json({"ok": False, "message": "Not found."}, status=404)
             return
 
@@ -3827,6 +4068,27 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                     return
                 preview_id = int(first(fields, "preview_id"))
                 deactivate_client_preview(preview_id)
+                self.send_response(303)
+                self.send_header("Location", "/admin/client-previews")
+                self.end_headers()
+                return
+
+            if request_path.startswith("/admin/client-previews/") and request_path.endswith("/edit"):
+                if not self._admin_allowed():
+                    self._send_json({"ok": False, "message": "Admin access required."}, status=403)
+                    return
+
+                try:
+                    preview_id = int(request_path.split("/")[-2])
+                except (TypeError, ValueError):
+                    self._send_json(
+                        {"ok": False, "message": "Invalid client preview."},
+                        status=400,
+                    )
+                    return
+
+                update_client_preview(preview_id, fields)
+
                 self.send_response(303)
                 self.send_header("Location", "/admin/client-previews")
                 self.end_headers()
@@ -3913,6 +4175,26 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 self._send_admin_login_required()
                 return
             self._render_client_preview_form()
+            return
+
+        if request_path.startswith("/admin/client-previews/") and request_path.endswith("/edit"):
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+
+            try:
+                preview_id = int(request_path.split("/")[-2])
+            except (TypeError, ValueError):
+                self._send_html(
+                    self._admin_shell(
+                        "Invalid Client Preview",
+                        "<section class='panel'><h1>Invalid client preview.</h1></section>",
+                    ),
+                    status=400,
+                )
+                return
+
+            self._render_client_preview_edit_form(preview_id)
             return
 
         if request_path == "/admin/login":
@@ -4042,7 +4324,11 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             return
 
         if request_path in {"/client-preview/jukebox-lounge", "/client-preview/jukebox-lounge/"}:
-            self.path = "/client-preview-jukebox-lounge.html"
+            self._render_client_preview_landing_page(
+                "client-preview-jukebox-lounge.html",
+                "jukebox-lounge",
+            )
+            return
 
         if request_path in {"/client-preview/jukebox-lounge/feedback", "/client-preview/jukebox-lounge/feedback/"}:
             self.path = "/client-preview-jukebox-lounge-feedback.html"
@@ -4051,7 +4337,11 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             self.path = "/client-preview-jukebox-lounge-thank-you.html"
 
         if request_path in {"/client-preview/creative-impressions", "/client-preview/creative-impressions/"}:
-            self.path = "/client-preview-creative-impressions.html"
+            self._render_client_preview_landing_page(
+                "client-preview-creative-impressions.html",
+                "creative-impressions",
+            )
+            return
 
         if request_path in {"/client-preview/creative-impressions/feedback", "/client-preview/creative-impressions/feedback/"}:
             self.path = "/client-preview-creative-impressions-feedback.html"
@@ -4060,6 +4350,25 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             self.path = "/client-preview-creative-impressions-thank-you.html"
 
 
+
+        # Automatically serve future client preview landing pages.
+        preview_parts = [
+            part
+            for part in request_path.strip("/").split("/")
+            if part
+        ]
+
+        if len(preview_parts) == 2 and preview_parts[0] == "client-preview":
+            client_slug = preview_parts[1]
+            preview_filename = f"client-preview-{client_slug}.html"
+            preview_file = PROJECT_DIR / preview_filename
+
+            if preview_file.exists():
+                self._render_client_preview_landing_page(
+                    preview_filename,
+                    client_slug,
+                )
+                return
 
         # Common convenience routes.
         if request_path in {"/", ""}:

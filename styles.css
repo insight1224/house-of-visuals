@@ -6214,3 +6214,232 @@ input:focus,textarea:focus,select:focus { outline: 2px solid rgba(31,122,87,.7);
   cursor: not-allowed;
   pointer-events: none;
 }
+
+/* Brand switch button for Print by HOV */
+.nav .brand-switch {
+  border: 1px solid rgba(212, 175, 55, 0.65);
+  color: #d4af37;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.08);
+  white-space: nowrap;
+}
+
+.nav .brand-switch:hover {
+  background: #d4af37;
+  color: #07130f;
+}
+
+/* Homepage Print by HOV promo */
+.home-print-promo {
+  background:
+    radial-gradient(circle at 85% 20%, rgba(212, 175, 55, 0.16), transparent 32%),
+    linear-gradient(135deg, #070707 0%, #101010 58%, #050505 100%);
+  color: #ffffff;
+  border-top: 1px solid rgba(212, 175, 55, 0.16);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.16);
+}
+
+.print-promo-grid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.print-promo-copy h2 {
+  max-width: 760px;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(2.2rem, 5vw, 4.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+
+.print-promo-copy p:not(.eyebrow) {
+  max-width: 680px;
+  margin: 22px 0 0;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+
+.print-promo-actions {
+  margin-top: 30px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.print-promo-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  border-radius: 28px;
+  padding: 22px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+}
+
+.print-promo-card img {
+  width: 100%;
+  display: block;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+}
+
+.print-promo-badge {
+  position: absolute;
+  top: 38px;
+  right: 38px;
+  z-index: 2;
+  padding: 10px 16px;
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  border-radius: 999px;
+  background: rgba(8, 8, 8, 0.82);
+  color: #d4af37;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+@media (max-width: 900px) {
+  .print-promo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .print-promo-card {
+    max-width: 620px;
+  }
+}
+
+@media (max-width: 620px) {
+  .print-promo-copy h2 {
+    font-size: 2.6rem;
+  }
+
+  .print-promo-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .print-promo-badge {
+    top: 28px;
+    right: 28px;
+    font-size: 0.62rem;
+  }
+}
+
+/* Homepage Print by HOV promo - smaller refined version */
+.home-print-promo {
+  padding-top: 56px;
+  padding-bottom: 56px;
+}
+
+.print-promo-grid {
+  grid-template-columns: 1fr 0.75fr;
+  gap: 34px;
+}
+
+.print-promo-copy h2 {
+  max-width: 620px;
+  font-size: clamp(1.9rem, 3.6vw, 3.1rem);
+  line-height: 1.05;
+}
+
+.print-promo-copy p:not(.eyebrow) {
+  max-width: 600px;
+  margin-top: 16px;
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.print-promo-actions {
+  margin-top: 24px;
+}
+
+.print-promo-card {
+  max-width: 420px;
+  justify-self: end;
+  padding: 14px;
+  border-radius: 22px;
+}
+
+.print-promo-card img {
+  max-height: 420px;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: 16px;
+}
+
+.print-promo-badge {
+  top: 26px;
+  right: 26px;
+  padding: 8px 13px;
+  font-size: 0.64rem;
+}
+
+@media (max-width: 900px) {
+  .print-promo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .print-promo-card {
+    justify-self: start;
+    max-width: 460px;
+  }
+}
+
+@media (max-width: 620px) {
+  .home-print-promo {
+    padding-top: 44px;
+    padding-bottom: 44px;
+  }
+
+  .print-promo-copy h2 {
+    font-size: 2rem;
+    line-height: 1.08;
+  }
+
+  .print-promo-card {
+    max-width: 100%;
+  }
+
+  .print-promo-card img {
+    max-height: 320px;
+  }
+}
+
+/* Featured project action buttons */
+.project-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.project-button-row .btn {
+  margin: 0;
+}
+
+.btn-outline {
+  border: 1px solid var(--gold, #c9a55c);
+  color: var(--gold, #c9a55c);
+  background: transparent;
+}
+
+.btn-outline:hover {
+  color: #111;
+  background: var(--gold, #c9a55c);
+}
+
+@media (max-width: 600px) {
+  .project-button-row {
+    flex-direction: column;
+  }
+
+  .project-button-row .btn {
+    width: 100%;
+    text-align: center;
+  }
+}
