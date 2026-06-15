@@ -917,7 +917,7 @@ def place_to_prospect_fields(place, industry, suggested_offer, recommended_demo)
         "lead_score": [str(lead_score)],
         "review_priority": [review_priority],
         "why_this_prospect": ["\n".join(why_reasons)],
-        "status": ["Needs Review"],
+        "status": ["New Prospect"],
         "notes": ["\n".join(notes)],
         "last_contacted": [""],
         "next_follow_up": [""],
