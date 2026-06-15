@@ -1148,73 +1148,54 @@ def get_industry_message_profile(industry_raw):
 def generate_outreach_messages(prospect):
     business_name = prospect.get("business_name") or "your business"
     contact_name = prospect.get("contact_name") or ""
-    industry_raw = (prospect.get("industry") or "local service").strip().lower()
-    website_status = (prospect.get("website_status") or "").strip().lower()
-    potential_need = prospect.get("potential_need") or "a stronger online experience and lead capture process"
-    suggested_offer = prospect.get("suggested_offer") or "website + lead system"
-    recommended_demo = prospect.get("recommended_demo") or "business demo"
+    industry_raw = (prospect.get("industry") or "local business").strip().lower()
+    recommended_demo = prospect.get("recommended_demo") or "industry demo"
 
     profile = get_industry_message_profile(industry_raw)
     industry_label = profile["label"]
-    client_action = profile["client_action"]
-    value_line = profile["value"]
 
     greeting_name = contact_name.split()[0] if contact_name else "there"
 
-    has_no_website = "no website" in website_status or "missing" in website_status
-    has_broken_website = "did not load" in website_status or "broken" in website_status
-    needs_improvement = "needs improvement" in website_status or "review quality" in website_status or "lower priority" in website_status
+    instagram_dm = f"""Hi {greeting_name}! We came across {business_name} while researching local businesses in the RDU area and wanted to introduce ourselves.
 
-    if has_no_website:
-        observation_dm = "I noticed there may not be a website listed, and I had a quick idea that could help."
-        observation_email = "I noticed there may not be a website listed, which could be an opportunity to make it easier for new clients to find you and reach out."
-        demo_line = f"I have a {recommended_demo} that shows how a business like yours could showcase services, collect inquiries, and create a smoother client experience."
-    elif has_broken_website:
-        observation_dm = "I noticed a website is listed, but it may not be loading cleanly. I had a quick idea that could help."
-        observation_email = "I noticed a website is listed, but it may not be loading cleanly. That could be costing you inquiries from people who are already interested."
-        demo_line = f"I have a {recommended_demo} that shows how the online experience could be cleaned up and connected to a stronger inquiry flow."
-    elif needs_improvement:
-        observation_dm = "I noticed you already have a website, and I had a quick idea that could make the online experience stronger."
-        observation_email = "I noticed you already have a website, and there may be an opportunity to strengthen the way visitors move from viewing your services to actually reaching out."
-        demo_line = f"I have a {recommended_demo} that shows how the online experience could be improved with clearer service sections, inquiry capture, and a simple follow-up system."
-    else:
-        observation_dm = "I came across your business and had a quick idea that could help with your online presence."
-        observation_email = "I came across your business and thought there may be an opportunity to strengthen your online presence and inquiry process."
-        demo_line = f"I have a {recommended_demo} that shows what this could look like for a business like yours."
+We’re the husband-and-wife team behind House of Visuals. We help small businesses with website design, branding, content creation, booking and inquiry flows, and lead-management systems.
 
-    instagram_dm = f"""Hey {greeting_name}, I came across {business_name} and wanted to reach out with a quick idea.
+We have a polished {recommended_demo} created for {industry_label} that shows what a stronger online experience could look like. We’d be happy to send it over for you to review—no pressure at all.
 
-{observation_dm}
+If you like the direction, the next step would be completing our short project inquiry form. From there, we can create a personalized demo for {business_name} and walk through it together on a demo call.
 
-I help {industry_label} create polished websites and simple lead systems that make it easier for potential clients to {client_action}.
+You can also learn more about us and view some of our past work at houseofvisualsco.com.
 
-{demo_line}
-
-Would you like me to send it over?"""
+Would you be open to seeing the industry demo?"""
 
     email_message = f"""Hi {greeting_name},
 
-I came across {business_name} and wanted to reach out with a quick idea.
+We recently came across {business_name} while researching local businesses in the RDU area and wanted to introduce ourselves.
 
-{observation_email}
+We’re the husband-and-wife team behind House of Visuals, a local creative agency helping small businesses improve how they show up online. Our services include website design and redesign, branding, content creation, booking and inquiry flows, marketing materials, and lead-management systems.
 
-I help {industry_label} create polished websites, lead capture systems, and simple dashboards that help {value_line}.
+We have a polished {recommended_demo} created for {industry_label} that shows what a stronger online experience could look like. We’d be happy to send it over for you to review—there’s no obligation or pressure.
 
-Based on what I saw, I think {business_name} could benefit from {potential_need.lower()}.
+If you like the direction, the next step would be completing our short project inquiry form. From there, we can create a personalized demo for {business_name} and walk through it together on a demo call.
 
-{demo_line}
+You can visit houseofvisualsco.com to learn more about our services and view examples of work we’ve completed for other businesses.
 
-Would you be open to me sending it over?
+Would you be open to seeing the industry demo?
 
 Best,
-Ashley
-House of Visuals"""
+The House of Visuals Team"""
 
-    follow_up = f"""Hey {greeting_name}, just following up in case you missed my last message.
+    follow_up = f"""Hi {greeting_name}, just following up on the message we sent about {business_name}.
 
-I thought {business_name} could be a good fit for a polished {suggested_offer.lower()} that helps {value_line}.
+We’d still be happy to share the {recommended_demo} we mentioned. It’s a visual example of how a business in your industry could present its services and customer inquiry process in a more polished and organized way.
 
-I can send over a quick demo if you would like to see what I mean."""
+If you like the direction, you can complete our short project inquiry form and we can create a personalized demo for {business_name}.
+
+You can also learn more about us and view some of our previous work at houseofvisualsco.com.
+
+No pressure at all—just let us know if you’d like us to send the industry demo over.
+
+— The House of Visuals Team"""
 
     return {
         "instagram_dm": instagram_dm,
@@ -1927,6 +1908,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
         query_params = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
         selected_status = query_params.get("status", [""])[0].strip()
         selected_industry = query_params.get("industry", [""])[0].strip()
+        selected_priority = query_params.get("priority", [""])[0].strip()
         search_term = query_params.get("q", [""])[0].strip().lower()
 
         filtered_prospects = []
@@ -1950,6 +1932,8 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             if selected_status and prospect.get("status") != selected_status:
                 continue
             if selected_industry and prospect.get("industry") != selected_industry:
+                continue
+            if selected_priority and prospect.get("review_priority") != selected_priority:
                 continue
             if search_term and search_term not in searchable_text:
                 continue
@@ -1983,6 +1967,16 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
         industry_options = "<option value=''>All Industries</option>" + "".join(
             f"<option value='{escape(industry)}' {'selected' if selected_industry == industry else ''}>{escape(industry)}</option>"
             for industry in industries
+        )
+
+        priority_options = "<option value=''>All Priorities</option>" + "".join(
+            f"<option value='{escape(priority)}' {'selected' if selected_priority == priority else ''}>{escape(priority)}</option>"
+            for priority in [
+                "High Priority",
+                "Medium Priority",
+                "Low Priority",
+                "Manual Review",
+            ]
         )
 
         rows = []
@@ -2056,6 +2050,10 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
                 <label>Industry
                   <select name="industry">{industry_options}</select>
+                </label>
+
+                <label>Priority
+                  <select name="priority">{priority_options}</select>
                 </label>
 
                 <button class="btn" type="submit">Apply Filters</button>
@@ -2255,6 +2253,8 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                   <button class="btn" type="submit">{'Save Prospect' if is_edit else 'Add Prospect'}</button>
                 </article>
               </section>
+            </form>
+
               {f"""
               <section class='panel outreach-panel'>
                 <div class='panel-head'>
@@ -2299,13 +2299,11 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
               <section class='panel danger-panel'>
                 <h2>Delete Prospect</h2>
                 <p>This permanently removes this prospect from your pipeline.</p>
-                <form method='post' action='/admin/prospects/{prospect['id']}/delete' onsubmit="return confirm('Delete this prospect permanently? This cannot be undone.');">
+                <form class='delete-form' method='post' action='/admin/prospects/{prospect['id']}/delete' onsubmit="return window.confirm('Delete this prospect permanently? This cannot be undone.');">
                   <button class='btn danger-btn' type='submit'>Delete Prospect</button>
                 </form>
               </section>
               """ if is_edit else ""}
-
-            </form>
             """,
         )
 
@@ -2679,7 +2677,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             <section class="panel danger-panel">
               <h2>Delete Lead</h2>
               <p>This permanently removes this lead from your dashboard.</p>
-              <form method="post" action="/admin/leads/{lead['id']}/delete" onsubmit="return confirm('Delete this lead permanently? This cannot be undone.');">
+              <form class="delete-form" method="post" action="/admin/leads/{lead['id']}/delete" onsubmit="return window.confirm('Delete this lead permanently? This cannot be undone.');">
                 <button class="btn danger-btn" type="submit">Delete Lead</button>
               </form>
             </section>
