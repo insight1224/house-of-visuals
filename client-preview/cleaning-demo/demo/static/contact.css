@@ -1,0 +1,34 @@
+.about-box {
+    max-width: 800px;
+    margin: auto;
+    background: #fff;
+    border: 3px solid #f4c542;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: left;
+}
+
+.about-box h2 {
+    color: #1f4fbf;
+    margin-bottom: 15px;
+}
+
+.faq-container {
+    max-width: 900px;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.faq-item {
+    background: #fff;
+    border: 2px solid #f4c542;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.faq-item h3 {
+    margin-bottom: 8px;
+    color: #1f4fbf;
+}

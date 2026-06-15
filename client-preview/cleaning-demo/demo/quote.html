@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Instant Cleaning Quote | RDU Cleaning</title>
+
+  <link rel="stylesheet" href="static/style.css">
+  <link rel="stylesheet" href="static/quote.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 16px 20px;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    nav .btn {
+      margin-top: 0;
+    }
+
+    .demo-note {
+      padding: 10px 20px;
+      background: #facc15;
+      color: #222;
+      text-align: center;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .quote-page-section {
+      padding: 60px 20px;
+      background: #f5f7fb;
+    }
+
+    .quote-container {
+      max-width: 760px;
+    }
+
+    .quote-intro {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .quote-intro h2 {
+      margin: 0 0 10px;
+      color: #1e4ed8;
+      font-size: 30px;
+    }
+
+    .quote-intro p {
+      margin: 0 auto;
+      max-width: 620px;
+      color: #555;
+      line-height: 1.6;
+    }
+
+    .quote-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .quote-field {
+      min-width: 0;
+    }
+
+    .quote-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .quote-container label {
+      margin-top: 0;
+    }
+
+    .quote-container select {
+      margin-bottom: 0;
+      background: white;
+    }
+
+    .addon-section {
+      grid-column: 1 / -1;
+      margin-top: 8px;
+    }
+
+    .addon-section h3 {
+      margin: 0 0 12px;
+      color: #1e4ed8;
+    }
+
+    .addon-grid input {
+      width: auto;
+      margin: 0 8px 0 0;
+    }
+
+    .addon-grid label {
+      display: flex;
+      align-items: center;
+      margin: 0;
+      color: #222;
+      font-weight: 600;
+    }
+
+    .calculate-button {
+      grid-column: 1 / -1;
+      margin-top: 8px;
+    }
+
+    .quote-result {
+      display: none;
+      margin-top: 26px;
+      text-align: center;
+    }
+
+    .quote-result.visible {
+      display: block;
+    }
+
+    .quote-result h3 {
+      margin-top: 0;
+    }
+
+    .estimate-price {
+      display: block;
+      margin: 14px 0;
+      color: #1e4ed8;
+      font-size: 48px;
+      font-weight: bold;
+    }
+
+    .demo-booking-button {
+      width: auto !important;
+      display: inline-block;
+      padding: 14px 28px !important;
+      background: #facc15 !important;
+      color: #1e4ed8 !important;
+      font-weight: bold;
+    }
+
+    .fine-print {
+      margin-top: 22px;
+      color: #666;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 700px) {
+      .quote-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .quote-field.full,
+      .addon-section,
+      .calculate-button {
+        grid-column: auto;
+      }
+
+      .addon-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding: 70px 20px;
+      }
+
+      .quote-container {
+        padding: 22px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="demo-note">
+    Interactive website demo — no real booking, email or payment will be submitted
+  </div>
+
+  <nav>
+    <a class="btn" href="index.html">Home</a>
+    <a class="btn" href="services.html">Services</a>
+    <a class="btn" href="quote.html">Get Quote</a>
+    <a class="btn" href="contact.html">Contact</a>
+  </nav>
+
+  <div class="hero">
+    <h1>Instant Cleaning Quote</h1>
+
+    <p>
+      Get an estimated cleaning price based on your home,
+      service needs and selected add-ons.
+    </p>
+
+    <a href="index.html" class="btn">Back to Home</a>
+  </div>
+
+  <section class="quote-page-section">
+    <div class="quote-container">
+      <div class="quote-intro">
+        <h2>Build Your Quote</h2>
+
+        <p>
+          Choose the options below to see how an embedded cleaning
+          calculator can provide customers with an instant estimate.
+        </p>
+      </div>
+
+      <form id="quoteCalculator">
+        <div class="quote-grid">
+          <div class="quote-field">
+            <label for="service">Service Type</label>
+
+            <select id="service">
+              <option value="99">Standard Cleaning</option>
+              <option value="149">Deep Cleaning</option>
+              <option value="199">Move-In / Move-Out</option>
+            </select>
+          </div>
+
+          <div class="quote-field">
+            <label for="sqft">Square Footage</label>
+
+            <select id="sqft">
+              <option value="0">Under 1,000 sq. ft.</option>
+              <option value="25">1,001–1,500 sq. ft.</option>
+              <option value="50">1,501–2,000 sq. ft.</option>
+              <option value="75">2,001–2,500 sq. ft.</option>
+              <option value="100">2,501–3,000 sq. ft.</option>
+              <option value="130">3,001–3,500 sq. ft.</option>
+              <option value="160">3,501–4,000 sq. ft.</option>
+              <option value="195">4,001–4,500 sq. ft.</option>
+              <option value="230">4,501–5,000 sq. ft.</option>
+              <option value="285">Over 5,000 sq. ft.</option>
+            </select>
+          </div>
+
+          <div class="quote-field">
+            <label for="bedrooms">Bedrooms</label>
+
+            <select id="bedrooms">
+              <option value="0">0–1 Bedrooms</option>
+              <option value="8">2 Bedrooms</option>
+              <option value="16">3 Bedrooms</option>
+              <option value="24">4 Bedrooms</option>
+              <option value="34">5 Bedrooms</option>
+              <option value="46">6+ Bedrooms</option>
+            </select>
+          </div>
+
+          <div class="quote-field">
+            <label for="bathrooms">Full Bathrooms</label>
+
+            <select id="bathrooms">
+              <option value="0">0–1 Bathrooms</option>
+              <option value="15">2 Bathrooms</option>
+              <option value="30">3 Bathrooms</option>
+              <option value="45">4 Bathrooms</option>
+              <option value="60">5+ Bathrooms</option>
+            </select>
+          </div>
+
+          <div class="quote-field">
+            <label for="halfBathrooms">Half Bathrooms</label>
+
+            <select id="halfBathrooms">
+              <option value="0">None</option>
+              <option value="8">1 Half Bathroom</option>
+              <option value="16">2 Half Bathrooms</option>
+              <option value="24">3+ Half Bathrooms</option>
+            </select>
+          </div>
+
+          <div class="quote-field">
+            <label for="condition">Current Cleanliness</label>
+
+            <select id="condition">
+              <option value="0">Light Cleaning</option>
+              <option value="25">Average Cleaning</option>
+              <option value="65">Heavy Cleaning</option>
+            </select>
+          </div>
+
+          <div class="quote-field full">
+            <label for="pets">Pets</label>
+
+            <select id="pets">
+              <option value="0">No Pets</option>
+              <option value="10">1 Pet</option>
+              <option value="20">2 Pets</option>
+              <option value="30">3+ Pets</option>
+            </select>
+          </div>
+
+          <div class="addon-section">
+            <h3>Add-On Services</h3>
+
+            <div class="addon-grid">
+              <label><input type="checkbox" value="35">Windows</label>
+              <label><input type="checkbox" value="40">Inside Cabinets</label>
+              <label><input type="checkbox" value="30">Walls</label>
+              <label><input type="checkbox" value="25">Inside Oven</label>
+              <label><input type="checkbox" value="25">Inside Fridge</label>
+              <label><input type="checkbox" value="20">Baseboards</label>
+              <label><input type="checkbox" value="18">Blinds</label>
+              <label><input type="checkbox" value="18">Ceiling Fans</label>
+              <label><input type="checkbox" value="20">Door Frames</label>
+              <label><input type="checkbox" value="20">Window Sills</label>
+              <label><input type="checkbox" value="25">Closet Shelves</label>
+              <label><input type="checkbox" value="12">Microwave</label>
+              <label><input type="checkbox" value="45">Tile / Grout Scrub</label>
+            </div>
+          </div>
+
+          <button class="calculate-button" type="submit">
+            Calculate Estimate
+          </button>
+        </div>
+      </form>
+
+      <div class="quote-result" id="quoteResult">
+        <h3>Your Estimated Cleaning Total</h3>
+
+        <span class="estimate-price" id="quoteAmount">$0</span>
+
+        <p id="quoteSummary"></p>
+
+        <p>
+          Final pricing can be customized to match the cleaning
+          company's exact services and pricing rules.
+        </p>
+
+        <button class="demo-booking-button" id="demoBookingButton" type="button">
+          Request Booking
+        </button>
+      </div>
+
+      <p class="fine-print">
+        Demo calculator only. No information is saved and no booking is submitted.
+      </p>
+    </div>
+  </section>
+
+  <script>
+    const calculator = document.getElementById("quoteCalculator");
+    const quoteResult = document.getElementById("quoteResult");
+    const quoteAmount = document.getElementById("quoteAmount");
+    const quoteSummary = document.getElementById("quoteSummary");
+
+    calculator.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const fieldIds = [
+        "service",
+        "sqft",
+        "bedrooms",
+        "bathrooms",
+        "halfBathrooms",
+        "condition",
+        "pets"
+      ];
+
+      let total = fieldIds.reduce(function (sum, id) {
+        return sum + Number(document.getElementById(id).value || 0);
+      }, 0);
+
+      const selectedAddons = Array.from(
+        document.querySelectorAll(
+          '.addon-grid input[type="checkbox"]:checked'
+        )
+      );
+
+      total += selectedAddons.reduce(function (sum, checkbox) {
+        return sum + Number(checkbox.value || 0);
+      }, 0);
+
+      const serviceName =
+        document.getElementById("service").selectedOptions[0].text;
+
+      quoteAmount.textContent = total.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0
+      });
+
+      quoteSummary.textContent =
+        serviceName +
+        " with " +
+        selectedAddons.length +
+        (selectedAddons.length === 1
+          ? " selected add-on."
+          : " selected add-ons.");
+
+      quoteResult.classList.add("visible");
+
+      quoteResult.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+    });
+
+    document
+      .getElementById("demoBookingButton")
+      .addEventListener("click", function () {
+        alert("Demo only — no booking has been submitted.");
+      });
+  </script>
+</body>
+</html>

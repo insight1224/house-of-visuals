@@ -1,0 +1,53 @@
+/* services page tweaks */
+
+.section h2 {
+    margin-top: 10px;
+}
+
+/* make service boxes slightly bigger */
+.box {
+    min-height: 150px;
+}
+
+/* add spacing between sections */
+.section {
+    margin-bottom: 20px;
+}
+.service-box {
+    text-align: left;
+}
+
+.service-box ul {
+    padding-left: 20px;
+    margin: 10px 0;
+}
+
+.service-box li {
+    margin-bottom: 5px;
+}
+
+.service-box h3 {
+    margin-bottom: 10px;
+    color: #1e4ed8;
+}
+.service-box ul {
+    columns: 2;
+    -webkit-columns: 2;
+    -moz-columns: 2;
+    padding-left: 20px;
+    text-align: left;
+}
+
+.service-box li {
+    margin-bottom: 8px;
+}
+.addon-container {
+    display: flex;
+    justify-content: center;
+}
+
+/* make the box smaller and cleaner */
+.addon-container .box {
+    max-width: 600px;
+    width: 100%;
+}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>About Us | RDU Cleaning</title>
+
+    <link rel="stylesheet" href="static/style.css">
+</head>
+
+<body>
+ <nav>
+    <a class="btn" href="index.html">Home</a>
+    <a class="btn" href="services.html">Services</a>
+    <a class="btn" href="quote.html">Get Quote</a>
+    <a class="btn" href="contact.html">Contact</a>
+</nav>
+<!-- HERO -->
+<div class="hero">
+    <h1>About RDU Cleaning</h1>
+    <p>Reliable, detailed, and affordable cleaning services in the RDU area</p>
+    <a class="btn" href="index.html">Back Home</a>
+</div>
+
+<!-- ABOUT SECTION -->
+<div class="contact-container">
+
+    <!-- ABOUT BOX -->
+    <div class="about-box">
+        <h1>About Us</h1>
+
+        <p>
+            We are a professional cleaning company serving Durham, Morrisville, and Cary.
+            We focus on quality, reliability, and customer satisfaction.
+        </p>
+    </div>
+
+<hr>
+
+<h2>Contact Us</h2>
+
+<form id="demoContactForm">
+
+    <input type="text" name="name" placeholder="Full Name" required>
+    <input type="text" name="phone" placeholder="Phone Number" required>
+    <input type="email" name="email" placeholder="Email" required>
+
+    <textarea name="message" placeholder="Your Message"></textarea>
+
+    <button class="btn" type="submit">Send Message</button>
+
+</form>
+</div>
+
+</div>
+
+<!-- FAQ SECTION -->
+<div class="section">
+
+    <h2>Frequently Asked Questions</h2>
+
+    <div class="faq-container">
+
+        <div class="faq-item">
+            <h3>Do you bring your own supplies?</h3>
+            <p>Yes, we bring all necessary cleaning supplies and equipment.</p>
+        </div>
+
+        <div class="faq-item">
+            <h3>Do I need to be home during cleaning?</h3>
+            <p>No, many clients provide access instructions so they can return to a clean home.</p>
+        </div>
+
+        <div class="faq-item">
+            <h3>How do I get a quote?</h3>
+            <p>You can use our instant quote calculator on the website.</p>
+        </div>
+
+        <div class="faq-item">
+            <h3>Are you insured?</h3>
+            <p>Yes, we are fully insured for your peace of mind.</p>
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("demoContactForm");
+
+  if (!form) return;
+
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    alert("Demo only — this contact form is not connected.");
+  });
+});
+</script>
+
+</body>
+</html>
