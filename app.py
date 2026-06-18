@@ -6,7 +6,7 @@ import csv
 import io
 import hashlib
 import hmac
-from datetime import datetime
+from datetime import datetime, timedelta
 from html import escape
 import json
 import os
@@ -32,6 +32,7 @@ DEFAULT_PROSPECT_STATUSES = [
     "Ready to Contact",
     "Contacted",
     "Follow-Up Needed",
+    "No Response",
     "Interested",
     "Not Interested",
     "Converted to Lead",
@@ -156,6 +157,7 @@ def init_database():
                 notes TEXT NOT NULL DEFAULT '',
                 last_contacted TEXT,
                 next_follow_up TEXT,
+                last_contact_method TEXT,
                 added_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
@@ -185,6 +187,32 @@ def init_database():
             connection.execute("ALTER TABLE prospects ADD COLUMN review_priority TEXT NOT NULL DEFAULT 'Manual Review'")
         if "why_this_prospect" not in columns:
             connection.execute("ALTER TABLE prospects ADD COLUMN why_this_prospect TEXT NOT NULL DEFAULT ''")
+        if "last_contact_method" not in columns:
+            connection.execute("ALTER TABLE prospects ADD COLUMN last_contact_method TEXT")
+
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS prospect_outreach_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                prospect_id INTEGER NOT NULL,
+                activity_type TEXT NOT NULL,
+                contact_method TEXT NOT NULL,
+                contacted_at TEXT NOT NULL,
+                next_follow_up TEXT,
+                notes TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (prospect_id) REFERENCES prospects(id) ON DELETE CASCADE
+            )
+            """
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_outreach_history_prospect "
+            "ON prospect_outreach_history (prospect_id)"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_outreach_history_contacted_at "
+            "ON prospect_outreach_history (contacted_at)"
+        )
 
         connection.execute("CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects (status)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_prospects_industry ON prospects (industry)")
@@ -336,6 +364,156 @@ def delete_prospect(prospect_id):
     with db_connect() as connection:
         connection.execute("DELETE FROM prospects WHERE id = ?", (prospect_id,))
 
+
+
+CONTACT_METHODS = [
+    "Email",
+    "Website Contact Form",
+    "Instagram",
+    "Facebook",
+    "Phone",
+    "Text Message",
+    "LinkedIn",
+    "Other",
+]
+
+
+def get_prospect_outreach_history(prospect_id):
+    init_database()
+    with db_connect() as connection:
+        rows = connection.execute(
+            """
+            SELECT *
+            FROM prospect_outreach_history
+            WHERE prospect_id = ?
+            ORDER BY contacted_at DESC, id DESC
+            """,
+            (prospect_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def log_prospect_contact(
+    prospect_id,
+    activity_type,
+    contact_method,
+    follow_up_days=3,
+    notes="",
+):
+    init_database()
+
+    if contact_method not in CONTACT_METHODS:
+        raise ValueError("Invalid contact method.")
+
+    if activity_type not in {"Initial Contact", "Follow-Up"}:
+        raise ValueError("Invalid outreach activity type.")
+
+    try:
+        follow_up_days = int(follow_up_days)
+    except (TypeError, ValueError):
+        follow_up_days = 3
+
+    today = datetime.now()
+    contacted_date = today.strftime("%Y-%m-%d")
+
+    if follow_up_days > 0:
+        next_follow_up = (today + timedelta(days=follow_up_days)).strftime("%Y-%m-%d")
+    else:
+        next_follow_up = None
+
+    if activity_type == "Initial Contact":
+        status = "Contacted"
+    elif follow_up_days > 0:
+        status = "Follow-Up Needed"
+    else:
+        status = "No Response"
+
+    timestamp = today.isoformat(timespec="seconds")
+
+    with db_connect() as connection:
+        existing = connection.execute(
+            "SELECT id FROM prospects WHERE id = ?",
+            (prospect_id,),
+        ).fetchone()
+
+        if not existing:
+            raise ValueError("Prospect not found.")
+
+        connection.execute(
+            """
+            UPDATE prospects
+            SET status = ?,
+                last_contacted = ?,
+                next_follow_up = ?,
+                last_contact_method = ?,
+                updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                status,
+                contacted_date,
+                next_follow_up,
+                contact_method,
+                timestamp,
+                prospect_id,
+            ),
+        )
+
+        connection.execute(
+            """
+            INSERT INTO prospect_outreach_history (
+                prospect_id,
+                activity_type,
+                contact_method,
+                contacted_at,
+                next_follow_up,
+                notes,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                prospect_id,
+                activity_type,
+                contact_method,
+                contacted_date,
+                next_follow_up,
+                notes or "",
+                timestamp,
+            ),
+        )
+
+    return {
+        "status": status,
+        "last_contacted": contacted_date,
+        "next_follow_up": next_follow_up,
+        "last_contact_method": contact_method,
+    }
+
+
+def mark_prospect_no_response(prospect_id):
+    init_database()
+    timestamp = datetime.now().isoformat(timespec="seconds")
+
+    with db_connect() as connection:
+        existing = connection.execute(
+            "SELECT id FROM prospects WHERE id = ?",
+            (prospect_id,),
+        ).fetchone()
+
+        if not existing:
+            raise ValueError("Prospect not found.")
+
+        connection.execute(
+            """
+            UPDATE prospects
+            SET status = 'No Response',
+                next_follow_up = NULL,
+                updated_at = ?
+            WHERE id = ?
+            """,
+            (timestamp, prospect_id),
+        )
 
 
 def create_prospect(fields):
@@ -2106,6 +2284,29 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             for status in DEFAULT_PROSPECT_STATUSES
         )
 
+        contact_method_options = "".join(
+            f"<option value='{escape(method)}'>{escape(method)}</option>"
+            for method in CONTACT_METHODS
+        )
+
+        outreach_history = (
+            get_prospect_outreach_history(prospect["id"])
+            if is_edit
+            else []
+        )
+
+        outreach_history_rows = "".join(
+            f"""
+            <article class='message-card'>
+              <h3>{escape(item.get('activity_type') or 'Contact')}</h3>
+              <p><strong>{escape(item.get('contacted_at') or '')}</strong> via {escape(item.get('contact_method') or '')}</p>
+              {f"<p>Next follow-up: {escape(item.get('next_follow_up') or '')}</p>" if item.get('next_follow_up') else "<p>No additional follow-up scheduled.</p>"}
+              {f"<p>{escape(item.get('notes') or '')}</p>" if item.get('notes') else ""}
+            </article>
+            """
+            for item in outreach_history
+        )
+
         return self._admin_shell(
             title,
             f"""
@@ -2113,6 +2314,13 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
               <p><a href="/admin/prospects">← Back to Prospects</a></p>
               <h1>{escape(title)}</h1>
               <p>{'Update this possible client.' if is_edit else 'Add a business you may want to contact.'}</p>
+
+              {f"""
+              <div class='quick-actions'>
+                {f"<a class='btn-small' href='{escape(prospect.get('website') or '')}' target='_blank' rel='noopener'>Open Website</a>" if prospect.get('website') else ""}
+                {f"<a class='btn-small' href='{escape(prospect.get('instagram') or '')}' target='_blank' rel='noopener'>Open Instagram</a>" if prospect.get('instagram') and str(prospect.get('instagram')).startswith('http') else ""}
+              </div>
+              """ if is_edit else ""}
             </section>
 
             <form method="post" action="{action}">
@@ -2155,6 +2363,69 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                   <label>Phone
                     <input name="phone" value="{value('phone')}" />
                   </label>
+
+                  {f"""
+                  <div class='contact-actions-inline'>
+                    <div class='panel-head'>
+                      <div>
+                        <h2>Contact Activity</h2>
+                        <p>Record the first message or a follow-up without leaving this page.</p>
+                      </div>
+                    </div>
+
+                    <article class='message-card'>
+                      <h3>Mark as Contacted</h3>
+                      <p>This sets the status to Contacted and schedules a follow-up in three days.</p>
+
+                      <label>How did you contact them?
+                        <select name='contact_method' form='mark-contacted-form' required>
+                          <option value=''>Choose a method</option>
+                          {contact_method_options}
+                        </select>
+                      </label>
+
+                      <label>Optional Note
+                        <textarea
+                          name='contact_notes'
+                          form='mark-contacted-form'
+                          rows='3'
+                          placeholder='Example: Sent the contractor demo through Instagram.'
+                        ></textarea>
+                      </label>
+
+                      <button class='btn' type='submit' form='mark-contacted-form'>
+                        Mark as Contacted
+                      </button>
+                    </article>
+
+                    <article class='message-card'>
+                      <h3>Log Final Follow-Up</h3>
+                      <p>
+                        Record the second and final message using
+                        <strong>{escape(prospect.get('last_contact_method') or 'the original contact method')}</strong>.
+                        A No Response review will be scheduled four days from today.
+                      </p>
+
+                      <button class='btn' type='submit' form='follow-up-form'>
+                        Log Final Follow-Up
+                      </button>
+                    </article>
+
+                    <article class='message-card'>
+                      <h3>Mark as No Response</h3>
+                      <p>Use this after the final follow-up window has passed and the prospect has not replied.</p>
+
+                      <button
+                        class='btn danger-btn'
+                        type='submit'
+                        form='no-response-form'
+                        onclick="return window.confirm('Mark this prospect as No Response?');"
+                      >
+                        Mark as No Response
+                      </button>
+                    </article>
+                  </div>
+                  """ if is_edit else ""}
                 </article>
 
                 <article class="panel">
@@ -2246,14 +2517,62 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                     <input type="date" name="next_follow_up" value="{value('next_follow_up')}" />
                   </label>
 
-                  <label>Notes
-                    <textarea name="notes" rows="7">{value('notes')}</textarea>
+                  <label>Last Contact Method
+                    <input value="{value('last_contact_method')}" placeholder="Not contacted yet" readonly />
                   </label>
-
-                  <button class="btn" type="submit">{'Save Prospect' if is_edit else 'Add Prospect'}</button>
                 </article>
               </section>
+
+              <section class="panel prospect-notes-panel">
+                <div class="panel-head">
+                  <div>
+                    <h2>Notes</h2>
+                    <p>Add internal details, reminders, or anything important about this prospect.</p>
+                  </div>
+                </div>
+
+                <label>Internal Prospect Notes
+                  <textarea name="notes" rows="6" placeholder="Add notes about the business, outreach, response, or next steps...">{value('notes')}</textarea>
+                </label>
+
+                <div class="quick-actions">
+                  <button class="btn" type="submit">{'Save Prospect' if is_edit else 'Add Prospect'}</button>
+                </div>
+              </section>
             </form>
+
+              {f"""
+              <form
+                id='mark-contacted-form'
+                method='post'
+                action='/admin/prospects/{prospect['id']}/mark-contacted'
+              ></form>
+
+              <form
+                id='follow-up-form'
+                method='post'
+                action='/admin/prospects/{prospect['id']}/follow-up'
+              ></form>
+
+              <form
+                id='no-response-form'
+                method='post'
+                action='/admin/prospects/{prospect['id']}/no-response'
+              ></form>
+
+              <section class='panel outreach-panel'>
+                <div class='panel-head'>
+                  <div>
+                    <h2>Outreach History</h2>
+                    <p>A record of how and when this prospect was contacted.</p>
+                  </div>
+                </div>
+
+                <div class='message-grid'>
+                  {outreach_history_rows if outreach_history_rows else "<article class='message-card'><p>No outreach has been recorded yet.</p></article>"}
+                </div>
+              </section>
+              """ if is_edit else ""}
 
               {f"""
               <section class='panel outreach-panel'>
@@ -2289,8 +2608,6 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
                 <div class='quick-actions'>
                   {f"<a class='btn-small' href='mailto:{escape(prospect.get('email') or '')}?subject=Quick idea for {escape(prospect.get('business_name') or 'your business')}&body={escape(generate_outreach_messages(prospect)['email_message'])}'>Open Email</a>" if prospect.get('email') else ""}
-                  {f"<a class='btn-small' href='{escape(prospect.get('website') or '')}' target='_blank' rel='noopener'>Open Website</a>" if prospect.get('website') else ""}
-                  {f"<a class='btn-small' href='{escape(prospect.get('instagram') or '')}' target='_blank' rel='noopener'>Open Instagram</a>" if prospect.get('instagram') and str(prospect.get('instagram')).startswith('http') else ""}
                 </div>
               </section>
               """ if is_edit else ""}
@@ -3906,6 +4223,78 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 return
 
             self._send_admin_login_required("Incorrect admin password. Please try again.", status=403)
+            return
+
+        if request_path.startswith("/admin/prospects/") and request_path.endswith("/mark-contacted"):
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                prospect_id = int(request_path.rstrip("/").split("/")[-2])
+                content_length = int(self.headers.get("Content-Length", "0"))
+                raw = self.rfile.read(content_length).decode("utf-8", errors="replace")
+                fields = parse_qs(raw, keep_blank_values=True)
+
+                log_prospect_contact(
+                    prospect_id=prospect_id,
+                    activity_type="Initial Contact",
+                    contact_method=first(fields, "contact_method"),
+                    follow_up_days=3,
+                    notes=first(fields, "contact_notes"),
+                )
+
+                self.send_response(303)
+                self.send_header("Location", f"/admin/prospects/{prospect_id}")
+                self.end_headers()
+            except Exception as error:
+                self._send_json({"ok": False, "message": str(error)}, status=400)
+            return
+
+        if request_path.startswith("/admin/prospects/") and request_path.endswith("/follow-up"):
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                prospect_id = int(request_path.rstrip("/").split("/")[-2])
+                prospect = get_prospect(prospect_id)
+
+                if not prospect:
+                    raise ValueError("Prospect not found.")
+
+                contact_method = prospect.get("last_contact_method")
+                if not contact_method:
+                    raise ValueError(
+                        "Mark this prospect as Contacted before logging the final follow-up."
+                    )
+
+                log_prospect_contact(
+                    prospect_id=prospect_id,
+                    activity_type="Follow-Up",
+                    contact_method=contact_method,
+                    follow_up_days=4,
+                    notes="Final follow-up sent using the original contact method.",
+                )
+
+                self.send_response(303)
+                self.send_header("Location", f"/admin/prospects/{prospect_id}")
+                self.end_headers()
+            except Exception as error:
+                self._send_json({"ok": False, "message": str(error)}, status=400)
+            return
+
+        if request_path.startswith("/admin/prospects/") and request_path.endswith("/no-response"):
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                prospect_id = int(request_path.rstrip("/").split("/")[-2])
+                mark_prospect_no_response(prospect_id)
+
+                self.send_response(303)
+                self.send_header("Location", f"/admin/prospects/{prospect_id}")
+                self.end_headers()
+            except Exception as error:
+                self._send_json({"ok": False, "message": str(error)}, status=400)
             return
 
         if request_path.startswith("/admin/prospects/") and request_path.endswith("/delete"):
