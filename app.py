@@ -4449,8 +4449,13 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
             if request_path == "/api/client-feedback":
                 self._send_client_feedback_email(fields)
+
+                client_slug_values = fields.get("client_slug", [])
+                client_slug = client_slug_values[0].strip() if client_slug_values else "creative-impressions"
+                client_slug = re.sub(r"[^a-z0-9-]", "", client_slug.lower()) or "creative-impressions"
+
                 self.send_response(303)
-                self.send_header("Location", "/client-preview/creative-impressions/thank-you")
+                self.send_header("Location", f"/client-preview/{client_slug}/thank-you")
                 self.end_headers()
                 return
 
@@ -4760,17 +4765,27 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             if part
         ]
 
-        if len(preview_parts) == 2 and preview_parts[0] == "client-preview":
+        if len(preview_parts) >= 2 and preview_parts[0] == "client-preview":
             client_slug = preview_parts[1]
-            preview_filename = f"client-preview-{client_slug}.html"
-            preview_file = PROJECT_DIR / preview_filename
 
-            if preview_file.exists():
-                self._render_client_preview_landing_page(
-                    preview_filename,
-                    client_slug,
-                )
-                return
+            if len(preview_parts) == 2:
+                preview_filename = f"client-preview-{client_slug}.html"
+                preview_file = PROJECT_DIR / preview_filename
+
+                if preview_file.exists():
+                    self._render_client_preview_landing_page(
+                        preview_filename,
+                        client_slug,
+                    )
+                    return
+
+            if len(preview_parts) == 3 and preview_parts[2] in {"feedback", "thank-you"}:
+                page_type = preview_parts[2]
+                page_filename = f"client-preview-{client_slug}-{page_type}.html"
+                page_file = PROJECT_DIR / page_filename
+
+                if page_file.exists():
+                    self.path = f"/{page_filename}"
 
         # Common convenience routes.
         if request_path in {"/", ""}:
