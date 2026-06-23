@@ -1,0 +1,943 @@
+:root {
+  --ink: #153c39;
+  --deep-green: #123c38;
+  --teal: #2f7e76;
+  --light-teal: #dcebe7;
+  --sage: #a8bdad;
+  --cream: #f7f2e8;
+  --warm-white: #fffdf9;
+  --gold: #c8954f;
+  --terracotta: #b96f54;
+  --text: #354541;
+  --muted: #65716d;
+  --border: rgba(21, 60, 57, 0.14);
+  --shadow: 0 24px 60px rgba(20, 55, 50, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--warm-white);
+  color: var(--text);
+  font-family: "DM Sans", sans-serif;
+}
+
+body,
+button,
+a,
+input,
+textarea,
+select {
+  font-family: "DM Sans", sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 253, 249, 0.95);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(18px);
+}
+
+.header-inner {
+  width: min(1180px, calc(100% - 40px));
+  min-height: 82px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.brand-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--light-teal);
+}
+
+.brand-icon svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.brand-copy {
+  display: grid;
+}
+
+.brand-copy strong {
+  font-family: "Playfair Display", serif;
+  font-size: 18px;
+  line-height: 1.05;
+}
+
+.brand-copy small {
+  margin-top: 4px;
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.main-nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.main-nav a {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.main-nav a:hover {
+  color: var(--teal);
+}
+
+.header-donate {
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.menu-toggle {
+  display: none;
+  margin-left: auto;
+  padding: 8px;
+  border: 0;
+  background: transparent;
+}
+
+.menu-toggle span {
+  width: 24px;
+  height: 2px;
+  display: block;
+  margin: 5px 0;
+  background: var(--ink);
+}
+
+.hero {
+  min-height: 710px;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(12, 47, 43, 0.96) 0%, rgba(12, 47, 43, 0.84) 44%, rgba(12, 47, 43, 0.16) 74%),
+    url("/static/client-previews/the-hold-my-hand-foundation/images/hero-mentoring.png")
+    center 38% / cover no-repeat;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 120px;
+  background: linear-gradient(to top, rgba(18, 60, 56, 0.45), transparent);
+}
+
+.hero-inner {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 80px;
+  align-items: center;
+  padding: 100px 0;
+}
+
+.hero-copy {
+  max-width: 760px;
+}
+
+.eyebrow {
+  margin: 0 0 18px;
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.section-heading h2,
+.center-heading h2,
+.story-content h2,
+.cta-inner h2 {
+  font-family: "Playfair Display", serif;
+  font-weight: 700;
+}
+
+.hero h1 {
+  max-width: 790px;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(48px, 6vw, 78px);
+  line-height: 1.03;
+}
+
+.hero-text {
+  max-width: 640px;
+  margin: 28px 0 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 18px;
+  line-height: 1.75;
+}
+
+.hero-actions,
+.cta-actions {
+  margin-top: 34px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 23px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.button-primary {
+  background: var(--terracotta);
+  color: #fff;
+}
+
+.button-light {
+  border-color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+
+.hero-card {
+  align-self: end;
+  margin-bottom: 20px;
+  padding: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 24px;
+  background: rgba(247, 242, 232, 0.91);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.hero-card-number {
+  color: var(--terracotta);
+  font-family: "Playfair Display", serif;
+  font-size: 35px;
+}
+
+.hero-card p {
+  margin: 16px 0 22px;
+  color: var(--ink);
+  font-family: "Playfair Display", serif;
+  font-size: 20px;
+  line-height: 1.45;
+}
+
+.hero-card a,
+.text-link,
+.program-card a,
+.involved-grid a {
+  color: var(--teal);
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.section-inner {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.mission-section {
+  padding: 110px 0;
+  background: var(--cream);
+}
+
+.mission-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.75fr;
+  gap: 100px;
+}
+
+.section-heading h2,
+.center-heading h2,
+.story-content h2,
+.cta-inner h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(38px, 5vw, 58px);
+  line-height: 1.08;
+}
+
+.mission-copy p,
+.center-heading > p,
+.story-content > p {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+.mission-copy p:first-child {
+  margin-top: 8px;
+}
+
+.text-link {
+  display: inline-block;
+  margin-top: 14px;
+}
+
+.impact-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--warm-white);
+}
+
+.impact-item {
+  min-height: 155px;
+  padding: 34px 45px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-right: 1px solid var(--border);
+}
+
+.impact-item:last-child {
+  border-right: 0;
+}
+
+.impact-item strong {
+  color: var(--ink);
+  font-family: "Playfair Display", serif;
+  font-size: 27px;
+}
+
+.impact-item span {
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.programs-section {
+  padding: 115px 0;
+}
+
+.center-heading {
+  max-width: 760px;
+  margin: 0 auto 55px;
+  text-align: center;
+}
+
+.center-heading > p:last-child {
+  max-width: 650px;
+  margin: 20px auto 0;
+}
+
+.program-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.program-card {
+  position: relative;
+  min-height: 440px;
+  padding: 36px;
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 15px 45px rgba(22, 60, 56, 0.07);
+}
+
+.program-card.featured {
+  transform: translateY(-18px);
+  background: var(--deep-green);
+  color: #fff;
+}
+
+.program-card.featured h3,
+.program-card.featured p,
+.program-card.featured a {
+  color: #fff;
+}
+
+.program-card.featured .program-number {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.program-card.featured .program-icon {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.program-card.featured .program-icon svg {
+  stroke: #fff;
+}
+
+.program-number {
+  position: absolute;
+  top: 28px;
+  right: 30px;
+  color: rgba(21, 60, 57, 0.18);
+  font-family: "Playfair Display", serif;
+  font-size: 38px;
+}
+
+.program-icon {
+  width: 68px;
+  height: 68px;
+  margin-bottom: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--light-teal);
+}
+
+.program-icon svg {
+  width: 36px;
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.program-card h3,
+.involved-grid h3 {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Playfair Display", serif;
+  font-size: 29px;
+}
+
+.program-card p,
+.involved-grid p {
+  margin: 18px 0 28px;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.story-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 720px;
+  background: var(--cream);
+}
+
+.story-image {
+  min-height: 650px;
+  background:
+    linear-gradient(rgba(32, 84, 77, 0.08), rgba(32, 84, 77, 0.08)),
+    url("/static/client-previews/the-hold-my-hand-foundation/images/story-mentoring.png")
+    center / cover no-repeat;
+}
+
+.story-content {
+  max-width: 650px;
+  padding: 100px 80px;
+  align-self: center;
+}
+
+.story-content blockquote {
+  margin: 34px 0 16px;
+  padding-left: 25px;
+  border-left: 3px solid var(--gold);
+  color: var(--ink);
+  font-family: "Playfair Display", serif;
+  font-size: 24px;
+  line-height: 1.45;
+}
+
+.founder-label {
+  color: var(--terracotta);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.involved-section {
+  padding: 115px 0;
+  background: var(--deep-green);
+}
+
+.light-heading h2 {
+  color: #fff;
+}
+
+.light-heading > p:last-child {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.involved-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.involved-grid article {
+  padding: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.involved-grid h3,
+.involved-grid a {
+  color: #fff;
+}
+
+.involved-grid p {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.involved-icon {
+  width: 58px;
+  height: 58px;
+  margin-bottom: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--deep-green);
+  font-size: 27px;
+}
+
+.cta-section {
+  padding: 90px 20px;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(200, 149, 79, 0.24), transparent 24%),
+    var(--light-teal);
+}
+
+.cta-inner {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 50px;
+  border-radius: 34px;
+  background: var(--warm-white);
+  box-shadow: var(--shadow);
+}
+
+.cta-inner h2 {
+  max-width: 760px;
+  font-size: clamp(36px, 4vw, 52px);
+}
+
+.cta-actions {
+  min-width: 230px;
+  flex-direction: column;
+  margin-top: 0;
+}
+
+.button-gold {
+  background: var(--gold);
+  color: var(--deep-green);
+}
+
+.button-outline {
+  border-color: var(--border);
+  color: var(--ink);
+}
+
+.site-footer {
+  padding: 75px 0 0;
+  background: #0d302d;
+  color: #fff;
+}
+
+.footer-inner {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.6fr 0.7fr 0.7fr;
+  gap: 70px;
+  padding-bottom: 60px;
+}
+
+.footer-brand .brand {
+  color: #fff;
+}
+
+.footer-brand p {
+  max-width: 390px;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.75;
+}
+
+.footer-column {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.footer-column h3 {
+  margin: 0 0 8px;
+  color: var(--gold);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.footer-column a {
+  color: rgba(255, 255, 255, 0.74);
+  text-decoration: none;
+}
+
+.footer-bottom {
+  padding: 20px max(20px, calc((100% - 1180px) / 2));
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 12px;
+}
+
+@media (max-width: 1000px) {
+  .main-nav,
+  .header-donate {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  .main-nav.is-open {
+    position: absolute;
+    top: 81px;
+    left: 0;
+    right: 0;
+    display: grid;
+    gap: 0;
+    padding: 12px 20px 20px;
+    background: var(--warm-white);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .main-nav.is-open a {
+    padding: 13px 0;
+  }
+
+  .hero-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-card {
+    max-width: 420px;
+    align-self: auto;
+    margin: 0;
+  }
+
+  .mission-grid {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+
+  .program-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .program-card,
+  .program-card.featured {
+    min-height: auto;
+    transform: none;
+  }
+
+  .story-section {
+    grid-template-columns: 1fr;
+  }
+
+  .story-image {
+    min-height: 500px;
+  }
+
+  .story-content {
+    max-width: none;
+    padding: 75px 40px;
+  }
+
+  .involved-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cta-inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cta-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .header-inner {
+    min-height: 74px;
+  }
+
+  .brand-copy strong {
+    font-size: 16px;
+  }
+
+  .hero {
+    min-height: 760px;
+    background:
+      linear-gradient(rgba(12, 47, 43, 0.88), rgba(12, 47, 43, 0.83)),
+      url("/static/client-previews/the-hold-my-hand-foundation/images/hero-mentoring.png")
+      center / cover no-repeat;
+  }
+
+  .hero-inner {
+    padding: 75px 0;
+  }
+
+  .hero h1 {
+    font-size: clamp(42px, 13vw, 62px);
+  }
+
+  .hero-actions .button {
+    width: 100%;
+  }
+
+  .mission-section,
+  .programs-section,
+  .involved-section {
+    padding: 80px 0;
+  }
+
+  .impact-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .impact-item {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .impact-item:last-child {
+    border-bottom: 0;
+  }
+
+  .program-card {
+    padding: 30px;
+  }
+
+  .story-image {
+    min-height: 390px;
+  }
+
+  .story-content {
+    padding: 65px 20px;
+  }
+
+  .cta-section {
+    padding: 60px 20px;
+  }
+
+  .cta-inner {
+    padding: 42px 24px;
+  }
+
+  .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+  }
+}
+
+/* =========================================================
+   $300 ONE-PAGE NONPROFIT LAUNCH CONCEPT
+   These styles affect only the launch-page version.
+   ========================================================= */
+
+.concept-banner {
+  padding: 9px 20px;
+  background: var(--gold);
+  color: var(--deep-green);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.launch-hero {
+  min-height: 620px;
+}
+
+.launch-hero-inner {
+  grid-template-columns: minmax(0, 820px);
+  padding-top: 85px;
+  padding-bottom: 85px;
+}
+
+.launch-hero .hero-copy {
+  max-width: 810px;
+}
+
+.launch-hero h1 {
+  max-width: 800px;
+  font-size: clamp(46px, 5.8vw, 74px);
+}
+
+.compact-section {
+  padding-top: 85px;
+  padding-bottom: 85px;
+}
+
+.launch-story-section {
+  min-height: 620px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--cream);
+}
+
+.launch-story-image {
+  min-height: 620px;
+  background:
+    linear-gradient(rgba(32, 84, 77, 0.08), rgba(32, 84, 77, 0.08)),
+    url("/static/client-previews/the-hold-my-hand-foundation/images/story-mentoring.png")
+    center / cover no-repeat;
+}
+
+.launch-story-content {
+  max-width: 650px;
+  align-self: center;
+  padding: 85px 75px;
+}
+
+.launch-story-content h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Playfair Display", serif;
+  font-size: clamp(38px, 4.5vw, 56px);
+  line-height: 1.08;
+}
+
+.launch-story-content > p {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+.launch-story-content blockquote {
+  margin: 30px 0 0;
+  padding-left: 24px;
+  border-left: 3px solid var(--gold);
+  color: var(--ink);
+  font-family: "Playfair Display", serif;
+  font-size: 23px;
+  line-height: 1.5;
+}
+
+.launch-footer {
+  padding-top: 65px;
+}
+
+@media (max-width: 1000px) {
+  .launch-hero-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .launch-story-section {
+    grid-template-columns: 1fr;
+  }
+
+  .launch-story-image {
+    min-height: 480px;
+  }
+
+  .launch-story-content {
+    max-width: none;
+    padding: 70px 40px;
+  }
+}
+
+@media (max-width: 720px) {
+  .concept-banner {
+    padding: 8px 14px;
+    font-size: 9px;
+    line-height: 1.5;
+  }
+
+  .launch-hero {
+    min-height: 700px;
+  }
+
+  .launch-hero-inner {
+    padding-top: 70px;
+    padding-bottom: 70px;
+  }
+
+  .compact-section {
+    padding-top: 70px;
+    padding-bottom: 70px;
+  }
+
+  .launch-story-image {
+    min-height: 390px;
+  }
+
+  .launch-story-content {
+    padding: 60px 20px;
+  }
+}

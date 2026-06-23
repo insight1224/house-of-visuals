@@ -70,12 +70,86 @@
       line-height: 1.6;
     }
 
+    .package-heading {
+      margin: 38px 0 18px;
+      color: #153c39;
+      font-size: 24px;
+    }
+
+    .package-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 22px;
+      text-align: left;
+    }
+
+    .package-card {
+      position: relative;
+      padding: 28px;
+      border: 1px solid rgba(21, 60, 57, 0.14);
+      border-radius: 22px;
+      background: #fbfaf7;
+    }
+
+    .package-card.featured {
+      border: 2px solid #153c39;
+      background: #f3f8f6;
+    }
+
+    .package-label {
+      margin: 0 0 8px;
+      color: #7a5b2e;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .package-card h3 {
+      margin: 0;
+      color: #153c39;
+      font-size: 25px;
+    }
+
+    .package-price {
+      margin: 9px 0 16px;
+      color: #171717;
+      font-size: 30px;
+      font-weight: 800;
+    }
+
+    .package-card ul {
+      margin: 0 0 24px;
+      padding-left: 20px;
+      color: #555;
+      line-height: 1.65;
+    }
+
+    .package-card li + li {
+      margin-top: 6px;
+    }
+
+    .package-card .preview-btn {
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .payment-note {
+      margin: 14px 0 0;
+      color: #666;
+      font-size: 13px;
+      line-height: 1.55;
+      text-align: center;
+    }
+
     .button-row {
       display: flex;
       justify-content: center;
       gap: 14px;
       flex-wrap: wrap;
-      margin-top: 34px;
+      margin-top: 30px;
     }
 
     .preview-btn {
@@ -102,6 +176,14 @@
     @media (max-width: 700px) {
       .preview-card {
         padding: 38px 22px;
+      }
+
+      .package-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .package-card {
+        padding: 24px 20px;
       }
 
       .preview-btn {
@@ -132,19 +214,69 @@
       </p>
 
       <div class="concept-note">
-        This is an initial design concept created for presentation purposes
-        and is not the completed website. Content, photos, features, and
-        wording can be refined during the full website process.
+        We created two flexible website options so you can compare a
+        streamlined launch page with a fuller website experience. Both options
+        can be customized with your final content, branding, photos, and links.
+      </div>
+
+      <h2 class="package-heading">Choose the option that fits your current stage</h2>
+
+      <div class="package-grid">
+        <article class="package-card">
+          <p class="package-label">Affordable Launch Option</p>
+          <h3>One-Page Nonprofit Launch Site</h3>
+          <div class="package-price">$300</div>
+
+          <ul>
+            <li>One polished scrolling webpage</li>
+            <li>Mission, story, and programs overview</li>
+            <li>Donate, volunteer, and partner sections</li>
+            <li>Mobile-friendly design</li>
+            <li>Contact or volunteer-interest form</li>
+            <li>One revision round</li>
+          </ul>
+
+          <a
+            class="preview-btn"
+            href="/client-preview/the-hold-my-hand-foundation/launch-page/"
+          >
+            View the $300 Launch Page
+          </a>
+
+          <p class="payment-note">
+            40% nonrefundable deposit · Remaining balance due before launch
+          </p>
+        </article>
+
+        <article class="package-card featured">
+          <p class="package-label">Fuller Website Option</p>
+          <h3>Nonprofit Starter Website</h3>
+          <div class="package-price">$500</div>
+
+          <ul>
+            <li>Up to 5 core website pages or an expanded custom layout</li>
+            <li>More space for programs and storytelling</li>
+            <li>Donation and volunteer features</li>
+            <li>Greater flexibility for future growth</li>
+            <li>Mobile-friendly custom design</li>
+            <li>Expanded revision and setup support</li>
+          </ul>
+
+          <a
+            class="preview-btn"
+            href="/client-preview/the-hold-my-hand-foundation/demo/"
+          >
+            View the $500 Starter Website
+          </a>
+
+          <p class="payment-note">
+            30% nonrefundable deposit · Remaining balance may be divided into
+            monthly payments
+          </p>
+        </article>
       </div>
 
       <div class="button-row">
-        <a
-          class="preview-btn"
-          href="/client-preview/the-hold-my-hand-foundation/demo/"
-        >
-          View Website Concept
-        </a>
-
         <a
           class="preview-btn secondary"
           href="https://calendar.app.google/kkKWCQk94dLb3psH8"
