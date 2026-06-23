@@ -1,99 +1,363 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>About Us | RDU Cleaning</title>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="description"
+        content="Contact RDU Cleaning and submit a demo service inquiry."
+    >
+
+    <title>Contact | RDU Cleaning</title>
 
     <link rel="stylesheet" href="static/style.css">
+    <link rel="stylesheet" href="static/contact.css">
 </head>
 
 <body>
- <nav>
-    <a class="btn" href="index.html">Home</a>
-    <a class="btn" href="services.html">Services</a>
-    <a class="btn" href="quote.html">Get Quote</a>
-    <a class="btn" href="contact.html">Contact</a>
-</nav>
-<!-- HERO -->
-<div class="hero">
-    <h1>About RDU Cleaning</h1>
-    <p>Reliable, detailed, and affordable cleaning services in the RDU area</p>
-    <a class="btn" href="index.html">Back Home</a>
+
+<div class="demo-note">
+    <strong>Interactive Demo</strong>
+    <span>No real inquiry, email, payment, or customer information will be submitted.</span>
 </div>
 
-<!-- ABOUT SECTION -->
-<div class="contact-container">
+<header class="site-header">
+    <a class="brand" href="index.html" aria-label="RDU Cleaning home">
+        <span class="brand-icon">✦</span>
 
-    <!-- ABOUT BOX -->
-    <div class="about-box">
-        <h1>About Us</h1>
+        <span class="brand-copy">
+            <strong>RDU Cleaning</strong>
+            <small>Fresh spaces. Easier days.</small>
+        </span>
+    </a>
 
-        <p>
-            We are a professional cleaning company serving Durham, Morrisville, and Cary.
-            We focus on quality, reliability, and customer satisfaction.
-        </p>
+    <nav class="site-nav" aria-label="Main navigation">
+        <a href="index.html">Home</a>
+        <a href="services.html">Services</a>
+        <a href="quote.html">Instant Quote</a>
+        <a class="active" href="contact.html">Contact</a>
+    </nav>
+
+    <a class="header-cta" href="quote.html">Get Estimate</a>
+</header>
+
+<main>
+
+    <section class="contact-hero">
+        <div class="contact-hero-copy">
+            <span class="eyebrow">Tell us about the space</span>
+
+            <h1>Let’s make the next step simple.</h1>
+
+            <p>
+                Share your service needs, preferred timing, and contact method.
+                This demo form shows how a cleaning business can collect organized
+                lead information before the first conversation.
+            </p>
+
+            <div class="contact-hero-actions">
+                <a class="button button-primary" href="#inquiry-form">Start an Inquiry</a>
+                <a class="button button-secondary" href="quote.html">Get Instant Estimate</a>
+            </div>
+        </div>
+
+        <aside class="contact-hero-card">
+            <span class="contact-card-label">What customers can submit</span>
+
+            <ul>
+                <li>Preferred cleaning service</li>
+                <li>Property type and location</li>
+                <li>Preferred contact method</li>
+                <li>Requested appointment timing</li>
+                <li>Additional cleaning details</li>
+            </ul>
+        </aside>
+    </section>
+
+    <section class="contact-section" id="inquiry-form">
+        <div class="contact-layout">
+
+            <div class="contact-form-column">
+                <div class="contact-intro">
+                    <span class="eyebrow">Service inquiry</span>
+                    <h2>How can we help?</h2>
+
+                    <p>
+                        Complete the form below to preview a structured cleaning
+                        inquiry experience. No information is saved or transmitted.
+                    </p>
+                </div>
+
+                <form id="demoContactForm" class="contact-form">
+
+                    <section class="form-panel">
+                        <div class="panel-heading">
+                            <span class="panel-number">01</span>
+
+                            <div>
+                                <h3>Contact information</h3>
+                                <p>Tell us who we should reach and how to respond.</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-grid">
+                            <div class="contact-field">
+                                <label for="name">Full Name</label>
+                                <input id="name" type="text" name="name" placeholder="Your name" required>
+                            </div>
+
+                            <div class="contact-field">
+                                <label for="email">Email Address</label>
+                                <input id="email" type="email" name="email" placeholder="you@example.com" required>
+                            </div>
+
+                            <div class="contact-field">
+                                <label for="phone">Phone Number</label>
+                                <input id="phone" type="tel" name="phone" placeholder="(919) 555-0123">
+                            </div>
+
+                            <div class="contact-field">
+                                <label for="contactMethod">Preferred Contact Method</label>
+
+                                <select id="contactMethod" name="contactMethod">
+                                    <option>Email</option>
+                                    <option>Phone Call</option>
+                                    <option>Text Message</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="form-panel">
+                        <div class="panel-heading">
+                            <span class="panel-number">02</span>
+
+                            <div>
+                                <h3>Service details</h3>
+                                <p>Choose the service and tell us about the property.</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-grid">
+                            <div class="contact-field">
+                                <label for="serviceInterest">Service Interest</label>
+
+                                <select id="serviceInterest" name="serviceInterest">
+                                    <option>Standard Cleaning</option>
+                                    <option>Deep Cleaning</option>
+                                    <option>Move-In / Move-Out</option>
+                                    <option>Office / Commercial Cleaning</option>
+                                    <option>Not Sure Yet</option>
+                                </select>
+                            </div>
+
+                            <div class="contact-field">
+                                <label for="propertyType">Property Type</label>
+
+                                <select id="propertyType" name="propertyType">
+                                    <option>House</option>
+                                    <option>Apartment / Condo</option>
+                                    <option>Townhome</option>
+                                    <option>Office / Commercial Space</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+
+                            <div class="contact-field">
+                                <label for="city">City</label>
+                                <input id="city" type="text" name="city" placeholder="Raleigh, Durham, Cary...">
+                            </div>
+
+                            <div class="contact-field">
+                                <label for="timing">Preferred Timing</label>
+
+                                <select id="timing" name="timing">
+                                    <option>As Soon as Possible</option>
+                                    <option>Within 1 Week</option>
+                                    <option>Within 2 Weeks</option>
+                                    <option>This Month</option>
+                                    <option>Flexible</option>
+                                </select>
+                            </div>
+
+                            <div class="contact-field full">
+                                <label for="message">Additional Details</label>
+
+                                <textarea
+                                    id="message"
+                                    name="message"
+                                    rows="6"
+                                    placeholder="Tell us about the property, service needs, preferred dates, or any special requests."
+                                ></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <label class="demo-consent">
+                        <input type="checkbox" id="demoConsent" required>
+                        <span>
+                            I understand this is an interactive demo and no real inquiry will be submitted.
+                        </span>
+                    </label>
+
+                    <button class="contact-submit" type="submit">
+                        <span>Preview Inquiry Submission</span>
+                        <span aria-hidden="true">→</span>
+                    </button>
+                </form>
+
+                <div class="contact-success" id="contactSuccess" aria-live="polite">
+                    <span class="success-icon">✓</span>
+
+                    <div>
+                        <span class="success-label">Demo confirmation</span>
+                        <h3>Your sample inquiry is complete.</h3>
+
+                        <p>
+                            No information was saved or sent. A live version could
+                            email the business, store the lead in a dashboard, or
+                            trigger an automated follow-up.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="contact-sidebar">
+                <div class="sidebar-card">
+                    <span class="sidebar-label">A connected workflow</span>
+
+                    <h2>Turn inquiries into organized leads.</h2>
+
+                    <p>
+                        A live contact form can connect directly to the business’s
+                        preferred workflow instead of sending unstructured messages.
+                    </p>
+
+                    <ul>
+                        <li>Email notifications</li>
+                        <li>Dashboard lead records</li>
+                        <li>Status and follow-up tracking</li>
+                        <li>Automated confirmation messages</li>
+                        <li>Service-based routing</li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-note">
+                    <strong>Already know what service you need?</strong>
+
+                    <p>
+                        Use the instant calculator to preview a starting estimate
+                        before submitting an inquiry.
+                    </p>
+
+                    <a href="quote.html">Open Quote Calculator →</a>
+                </div>
+            </aside>
+
+        </div>
+    </section>
+
+    <section class="faq-section">
+        <div class="section-heading">
+            <span class="eyebrow">Common questions</span>
+            <h2>Information that can be customized for each business.</h2>
+
+            <p>
+                These sample answers demonstrate how a cleaning company can
+                explain its process without making unsupported claims.
+            </p>
+        </div>
+
+        <div class="faq-grid">
+            <article class="faq-item">
+                <span>01</span>
+                <h3>Do you provide cleaning supplies?</h3>
+
+                <p>
+                    Supply and equipment policies can be customized based on the
+                    cleaning company’s actual operating process.
+                </p>
+            </article>
+
+            <article class="faq-item">
+                <span>02</span>
+                <h3>Do I need to be present?</h3>
+
+                <p>
+                    Access instructions and presence requirements can be confirmed
+                    during scheduling.
+                </p>
+            </article>
+
+            <article class="faq-item">
+                <span>03</span>
+                <h3>How is final pricing confirmed?</h3>
+
+                <p>
+                    The instant calculator provides a starting estimate. Final
+                    pricing can be confirmed after reviewing the service details.
+                </p>
+            </article>
+
+            <article class="faq-item">
+                <span>04</span>
+                <h3>Can services be customized?</h3>
+
+                <p>
+                    Service packages, add-ons, availability, and pricing rules can
+                    all be tailored to the business.
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <section class="contact-cta">
+        <div>
+            <span class="eyebrow">Prefer to start with pricing?</span>
+            <h2>Build an instant estimate first.</h2>
+
+            <p>
+                Select the service, property size, and optional extras to preview
+                the calculator experience.
+            </p>
+        </div>
+
+        <a class="button button-light" href="quote.html">Try the Calculator</a>
+    </section>
+
+</main>
+
+<footer class="site-footer">
+    <div>
+        <strong>RDU Cleaning</strong>
+        <span>Demo cleaning service experience by House of Visuals.</span>
     </div>
 
-<hr>
-
-<h2>Contact Us</h2>
-
-<form id="demoContactForm">
-
-    <input type="text" name="name" placeholder="Full Name" required>
-    <input type="text" name="phone" placeholder="Phone Number" required>
-    <input type="email" name="email" placeholder="Email" required>
-
-    <textarea name="message" placeholder="Your Message"></textarea>
-
-    <button class="btn" type="submit">Send Message</button>
-
-</form>
-</div>
-
-</div>
-
-<!-- FAQ SECTION -->
-<div class="section">
-
-    <h2>Frequently Asked Questions</h2>
-
-    <div class="faq-container">
-
-        <div class="faq-item">
-            <h3>Do you bring your own supplies?</h3>
-            <p>Yes, we bring all necessary cleaning supplies and equipment.</p>
-        </div>
-
-        <div class="faq-item">
-            <h3>Do I need to be home during cleaning?</h3>
-            <p>No, many clients provide access instructions so they can return to a clean home.</p>
-        </div>
-
-        <div class="faq-item">
-            <h3>How do I get a quote?</h3>
-            <p>You can use our instant quote calculator on the website.</p>
-        </div>
-
-        <div class="faq-item">
-            <h3>Are you insured?</h3>
-            <p>Yes, we are fully insured for your peace of mind.</p>
-        </div>
-
+    <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="services.html">Services</a>
+        <a href="quote.html">Instant Quote</a>
     </div>
-
-</div>
-
+</footer>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  const form = document.getElementById("demoContactForm");
+    const form = document.getElementById("demoContactForm");
+    const success = document.getElementById("contactSuccess");
 
-  if (!form) return;
+    if (!form || !success) return;
 
-  form.addEventListener("submit", function (event) {
-    event.preventDefault();
-    alert("Demo only — this contact form is not connected.");
-  });
+    form.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        success.classList.add("visible");
+
+        success.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+    });
 });
 </script>
 
