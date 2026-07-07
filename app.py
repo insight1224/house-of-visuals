@@ -3610,6 +3610,40 @@ Thanks!"""
               </form>
             </section>
 
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Official API Import</h2>
+                  <p>Future-safe job import using approved Upwork API access only.</p>
+                </div>
+                <span class="status">Not Connected</span>
+              </div>
+
+              <div class="score-checklist">
+                <h3>Safety Rule</h3>
+                <p>This section will only use official Upwork API access if approved later. It will not scrape Upwork, log into your account, auto-refresh pages, auto-click jobs, or auto-apply.</p>
+              </div>
+
+              <form method="post" action="/admin/upwork-scout/api-import">
+                <label>Search Terms
+                  <textarea name="api_search_terms" rows="5" placeholder="website redesign&#10;landing page design&#10;quote calculator&#10;booking form&#10;small business website">website redesign
+landing page design
+quote calculator
+booking form
+small business website</textarea>
+                </label>
+
+                <label>Max Jobs to Review
+                  <input type="number" name="api_max_jobs" value="10" min="1" max="50" />
+                </label>
+
+                <div class="quick-actions">
+                  <button class="btn" type="submit">Check API Connection</button>
+                  <span class="btn-small">Import will unlock after API credentials are added</span>
+                </div>
+              </form>
+            </section>
+
             {results_html}
 
             {self._render_upwork_saved_jobs_table()}
@@ -5151,6 +5185,34 @@ Thanks!"""
 
     def do_POST(self):
         request_path = self.path.split("?", 1)[0]
+
+        if request_path == "/admin/upwork-scout/api-import":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._send_html(
+                self._admin_shell(
+                    "Upwork API Not Connected",
+                    """
+                    <section class="hero">
+                      <p>Upwork Scout</p>
+                      <h1>Official API Import</h1>
+                      <p>This feature is prepared, but official Upwork API credentials have not been connected yet.</p>
+                    </section>
+
+                    <section class="panel">
+                      <h2>Safe Import Status</h2>
+                      <p>Upwork Scout will only import jobs through approved official API access. It will not scrape Upwork pages, log into your account, auto-click jobs, auto-refresh searches, or auto-apply.</p>
+
+                      <div class="quick-actions">
+                        <a class="btn" href="/admin/upwork-scout">Back to Upwork Scout</a>
+                      </div>
+                    </section>
+                    """,
+                ),
+                status=200,
+            )
+            return
 
         if request_path.startswith("/admin/upwork-scout/") and request_path.rstrip("/").rsplit("/", 1)[-1].isdigit():
             if not self._admin_allowed():
