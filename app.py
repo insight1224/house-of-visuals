@@ -3226,6 +3226,15 @@ Thanks!"""
             )
             return
 
+        query_params = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+        success_message = "Job updated successfully." if query_params.get("updated", [""])[0] == "1" else ""
+        success_html = f"""
+            <section class="panel success-panel">
+              <h2>{escape(success_message)}</h2>
+              <p>Your changes were saved.</p>
+            </section>
+        """ if success_message else ""
+
         status_options = "".join(
             f"<option value='{escape(status)}' {'selected' if status == (job.get('status') or 'New') else ''}>{escape(status)}</option>"
             for status in DEFAULT_UPWORK_SCOUT_STATUSES
@@ -3256,6 +3265,8 @@ Thanks!"""
                 {job_link_button}
               </div>
             </section>
+
+            {success_html}
 
             <section class="detail-grid">
               <article class="panel">
@@ -3474,6 +3485,20 @@ Thanks!"""
     def _render_upwork_scout(self, results=None, pasted_text=""):
         results = results or []
         pasted_text = pasted_text or ""
+        query_params = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+
+        success_message = ""
+        if query_params.get("saved", [""])[0] == "1":
+            success_message = "Job saved to tracker."
+        elif query_params.get("updated", [""])[0] == "1":
+            success_message = "Job updated successfully."
+
+        success_html = f"""
+            <section class="panel success-panel">
+              <h2>{escape(success_message)}</h2>
+              <p>Your Upwork Scout tracker has been updated.</p>
+            </section>
+        """ if success_message else ""
 
         if results:
             cards = []
@@ -3589,6 +3614,8 @@ Thanks!"""
               <h1>Upwork Scout</h1>
               <p>Paste job posts or copied search-result text here. This tool does not log into Upwork, scrape pages, auto-refresh, auto-click, or auto-apply.</p>
             </section>
+
+            {success_html}
 
             <section class="panel">
               <div class="panel-head">
@@ -4691,6 +4718,15 @@ small business website</textarea>
               .check-row strong {{
                 color: var(--green);
               }}
+              .success-panel {{
+                border-color: rgba(31, 122, 87, 0.24);
+                background: #edf8f1;
+              }}
+              .success-panel h2 {{
+                color: var(--green);
+                margin-bottom: 0.35rem;
+              }}
+
               .danger-panel {{
                 border-color: rgba(138, 45, 31, 0.22);
                 background: #fff7f4;
