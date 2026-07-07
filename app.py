@@ -39,6 +39,17 @@ DEFAULT_PROSPECT_STATUSES = [
 ]
 VALID_PROSPECT_STATUSES = set(DEFAULT_PROSPECT_STATUSES)
 
+DEFAULT_UPWORK_SCOUT_STATUSES = [
+    "New",
+    "Applied",
+    "Maybe",
+    "Skipped",
+    "Interview",
+    "Hired",
+    "Lost",
+]
+VALID_UPWORK_SCOUT_STATUSES = set(DEFAULT_UPWORK_SCOUT_STATUSES)
+
 CLIENT_PREVIEWS = [
     {
         "client": "Creative Impressions Media",
@@ -219,6 +230,47 @@ def init_database():
         connection.execute("CREATE INDEX IF NOT EXISTS idx_prospects_added_at ON prospects (added_at)")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_prospects_next_follow_up ON prospects (next_follow_up)")
 
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS upwork_scout_jobs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                client_name TEXT NOT NULL DEFAULT '',
+                source TEXT NOT NULL DEFAULT 'Manual Paste',
+                job_url TEXT NOT NULL DEFAULT '',
+                pasted_text TEXT NOT NULL DEFAULT '',
+                budget TEXT NOT NULL DEFAULT '',
+                connects_required TEXT NOT NULL DEFAULT '',
+                proposals_count TEXT NOT NULL DEFAULT '',
+                interviews_count TEXT NOT NULL DEFAULT '',
+                posted_date TEXT NOT NULL DEFAULT '',
+                last_viewed TEXT NOT NULL DEFAULT '',
+                client_rating TEXT NOT NULL DEFAULT '',
+                client_spend TEXT NOT NULL DEFAULT '',
+                skills TEXT NOT NULL DEFAULT '',
+                score INTEGER NOT NULL DEFAULT 0,
+                decision_label TEXT NOT NULL DEFAULT 'Maybe',
+                short_reason TEXT NOT NULL DEFAULT '',
+                positive_signs TEXT NOT NULL DEFAULT '[]',
+                red_flags TEXT NOT NULL DEFAULT '[]',
+                suggested_bid TEXT NOT NULL DEFAULT '',
+                suggested_timeline TEXT NOT NULL DEFAULT '',
+                suggested_portfolio TEXT NOT NULL DEFAULT '[]',
+                proposal_draft TEXT NOT NULL DEFAULT '',
+                client_questions TEXT NOT NULL DEFAULT '[]',
+                status TEXT NOT NULL DEFAULT 'New',
+                connects_spent TEXT NOT NULL DEFAULT '',
+                notes TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_upwork_scout_score ON upwork_scout_jobs (score)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_upwork_scout_decision ON upwork_scout_jobs (decision_label)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_upwork_scout_status ON upwork_scout_jobs (status)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_upwork_scout_created_at ON upwork_scout_jobs (created_at)")
+
 
 def get_business_id():
     business_key = os.getenv("HOV_BUSINESS_KEY", "house-of-visuals")
@@ -364,6 +416,142 @@ def delete_prospect(prospect_id):
     with db_connect() as connection:
         connection.execute("DELETE FROM prospects WHERE id = ?", (prospect_id,))
 
+
+
+
+def row_to_upwork_scout_job(row):
+    job = dict(row)
+    for key in ["positive_signs", "red_flags", "suggested_portfolio", "client_questions"]:
+        try:
+            job[key] = json.loads(job.get(key) or "[]")
+        except json.JSONDecodeError:
+            job[key] = []
+    return job
+
+
+def get_upwork_scout_jobs(status_filter="", decision_filter="", sort_by="created_at"):
+    init_database()
+
+    allowed_sorts = {
+        "created_at": "created_at DESC, id DESC",
+        "score": "score DESC, created_at DESC",
+        "connects": "connects_required ASC, score DESC",
+        "status": "status ASC, created_at DESC",
+    }
+    order_by = allowed_sorts.get(sort_by, allowed_sorts["created_at"])
+
+    where = []
+    params = []
+
+    if status_filter:
+        where.append("status = ?")
+        params.append(status_filter)
+
+    if decision_filter:
+        where.append("decision_label = ?")
+        params.append(decision_filter)
+
+    where_sql = f"WHERE {' AND '.join(where)}" if where else ""
+
+    with db_connect() as connection:
+        rows = connection.execute(
+            f"""
+            SELECT *
+            FROM upwork_scout_jobs
+            {where_sql}
+            ORDER BY {order_by}
+            """,
+            params,
+        ).fetchall()
+        return [row_to_upwork_scout_job(row) for row in rows]
+
+
+def create_upwork_scout_job(job, job_url="", status="New", notes="", connects_spent=""):
+    init_database()
+
+    if status not in VALID_UPWORK_SCOUT_STATUSES:
+        status = "New"
+
+    now = datetime.now().isoformat(timespec="seconds")
+
+    with db_connect() as connection:
+        cursor = connection.execute(
+            """
+            INSERT INTO upwork_scout_jobs (
+                title, client_name, source, job_url, pasted_text, budget,
+                connects_required, proposals_count, interviews_count, posted_date,
+                last_viewed, client_rating, client_spend, skills, score,
+                decision_label, short_reason, positive_signs, red_flags,
+                suggested_bid, suggested_timeline, suggested_portfolio,
+                proposal_draft, client_questions, status, connects_spent,
+                notes, created_at, updated_at
+            )
+            VALUES (?, '', 'Manual Paste', ?, ?, ?, ?, ?, ?, '', '', '', '', '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                job.get("title") or "Upwork Job",
+                job_url or "",
+                job.get("pasted_text") or "",
+                job.get("budget") or "",
+                str(job.get("connects_required") or ""),
+                str(job.get("proposals") or ""),
+                str(job.get("interviews") or ""),
+                int(job.get("score") or 0),
+                job.get("decision") or "Maybe",
+                job.get("short_reason") or "",
+                json.dumps(job.get("positive_signs") or []),
+                json.dumps(job.get("red_flags") or []),
+                job.get("suggested_bid") or "",
+                job.get("suggested_timeline") or "",
+                json.dumps(job.get("suggested_portfolio") or []),
+                job.get("proposal_draft") or "",
+                json.dumps(job.get("client_questions") or []),
+                status,
+                connects_spent or "",
+                notes or "",
+                now,
+                now,
+            ),
+        )
+        return cursor.lastrowid
+
+
+def update_upwork_scout_job(job_id, status=None, notes=None, connects_spent=None, job_url=None):
+    init_database()
+
+    updates = []
+    params = []
+
+    if status is not None:
+        if status not in VALID_UPWORK_SCOUT_STATUSES:
+            raise ValueError("Invalid Upwork Scout status.")
+        updates.append("status = ?")
+        params.append(status)
+
+    if notes is not None:
+        updates.append("notes = ?")
+        params.append(notes)
+
+    if connects_spent is not None:
+        updates.append("connects_spent = ?")
+        params.append(connects_spent)
+
+    if job_url is not None:
+        updates.append("job_url = ?")
+        params.append(job_url)
+
+    if not updates:
+        return
+
+    updates.append("updated_at = ?")
+    params.append(datetime.now().isoformat(timespec="seconds"))
+    params.append(job_id)
+
+    with db_connect() as connection:
+        connection.execute(
+            f"UPDATE upwork_scout_jobs SET {', '.join(updates)} WHERE id = ?",
+            params,
+        )
 
 
 CONTACT_METHODS = [
@@ -2624,6 +2812,656 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
             """,
         )
 
+
+
+    def _split_upwork_jobs(self, pasted_text):
+        text = (pasted_text or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+        if not text:
+            return []
+
+        lines = [line.strip() for line in text.split("\n")]
+
+        def is_posted_line(line):
+            value = (line or "").lower().strip()
+            return (
+                value.startswith("posted ")
+                or value == "posted today"
+                or value == "posted yesterday"
+                or "posted just now" in value
+            )
+
+        posted_indexes = [
+            index
+            for index, line in enumerate(lines)
+            if is_posted_line(line)
+        ]
+
+        # If there is only one Upwork "Posted..." marker, this is almost always one full job post.
+        if len(posted_indexes) <= 1:
+            return [text]
+
+        # For multiple pasted search-result cards, split at the likely title right before each Posted line.
+        start_indexes = []
+        for posted_index in posted_indexes:
+            title_index = None
+
+            for candidate in range(posted_index - 1, max(-1, posted_index - 5), -1):
+                candidate_line = lines[candidate].strip()
+
+                if not candidate_line:
+                    continue
+
+                lower_candidate = candidate_line.lower()
+
+                if (
+                    len(candidate_line) < 5
+                    or len(candidate_line) > 150
+                    or candidate_line.startswith("$")
+                    or lower_candidate in {"fixed-price", "hourly", "intermediate", "expert", "entry level"}
+                    or lower_candidate.startswith("send a proposal")
+                    or lower_candidate.startswith("available connects")
+                    or lower_candidate.startswith("proposals:")
+                    or lower_candidate.startswith("interviewing:")
+                    or lower_candidate.startswith("skills and expertise")
+                    or lower_candidate.startswith("activity on this job")
+                    or lower_candidate.startswith("about the client")
+                ):
+                    continue
+
+                title_index = candidate
+                break
+
+            if title_index is not None:
+                start_indexes.append(title_index)
+
+        # Remove duplicates while keeping order.
+        cleaned_starts = []
+        for index in start_indexes:
+            if index not in cleaned_starts:
+                cleaned_starts.append(index)
+
+        if len(cleaned_starts) <= 1:
+            return [text]
+
+        jobs = []
+        for position, start_index in enumerate(cleaned_starts):
+            end_index = cleaned_starts[position + 1] if position + 1 < len(cleaned_starts) else len(lines)
+            chunk = "\n".join(lines[start_index:end_index]).strip()
+            if len(chunk) > 80:
+                jobs.append(chunk)
+
+        return jobs[:20] if jobs else [text]
+
+    def _extract_money_values(self, text):
+        values = []
+        for match in re.findall(r"\$\s*([0-9][0-9,]*(?:\.\d{1,2})?)", text or ""):
+            try:
+                values.append(float(match.replace(",", "")))
+            except ValueError:
+                continue
+        return values
+
+    def _extract_first_number_after_label(self, text, label):
+        pattern = rf"{re.escape(label)}\s*:?\s*([0-9]+)"
+        match = re.search(pattern, text or "", flags=re.IGNORECASE)
+        if match:
+            try:
+                return int(match.group(1))
+            except ValueError:
+                return None
+        return None
+
+    def _upwork_decision_label(self, score):
+        if score >= 80:
+            return "Apply"
+        if score >= 60:
+            return "Maybe"
+        return "Skip"
+
+    def _portfolio_matches_for_upwork(self, lower_text):
+        matches = []
+
+        if any(word in lower_text for word in ["landing page", "small business", "business website", "website design", "website redesign", "redesign"]):
+            matches.extend(["House of Visuals", "Creative Impressions", "Cleaning Demo"])
+
+        if any(word in lower_text for word in ["real estate", "photography", "professional service", "consultant", "coach"]):
+            matches.extend(["Creative Impressions", "House of Visuals"])
+
+        if any(word in lower_text for word in ["calculator", "quote", "pricing calculator", "estimate", "estimator"]):
+            matches.append("Cleaning Demo Quote Calculator")
+
+        if any(word in lower_text for word in ["dashboard", "crm", "admin", "portal", "database", "tracker"]):
+            matches.append("Jukebox Dashboard")
+
+        if any(word in lower_text for word in ["ecommerce", "e-commerce", "product", "shop", "store", "checkout"]):
+            matches.append("HOV Market Demo")
+
+        if any(word in lower_text for word in ["interactive", "map", "floor plan", "prototype", "custom tool"]):
+            matches.extend(["Jukebox dashboard/custom tools", "House of Visuals admin work"])
+
+        cleaned = []
+        for item in matches:
+            if item not in cleaned:
+                cleaned.append(item)
+
+        return cleaned or ["House of Visuals", "Creative Impressions", "Cleaning Demo"]
+
+    def _analyze_single_upwork_job(self, job_text, job_number=1):
+        raw = job_text or ""
+        lower = raw.lower()
+        lines = [line.strip() for line in raw.splitlines() if line.strip()]
+
+        title = "Upwork Job"
+        for line in lines[:8]:
+            if len(line) > 4 and not any(skip in line.lower() for skip in ["posted", "send a proposal", "available connects", "proposals:", "interviewing:"]):
+                title = line[:120]
+                break
+
+        score = 50
+        positives = []
+        red_flags = []
+
+        service_keywords = [
+            "website", "landing page", "web design", "redesign", "small business",
+            "service business", "responsive", "home page", "contact form"
+        ]
+        feature_keywords = [
+            "calculator", "quote", "pricing", "booking", "contact form", "dashboard",
+            "crm", "admin", "interactive", "map", "floor plan", "prototype", "form"
+        ]
+        niche_keywords = [
+            "cleaning", "contractor", "real estate", "beauty", "medical", "consultant",
+            "coach", "event", "restaurant", "ecommerce", "e-commerce", "photography",
+            "home service", "service business"
+        ]
+        platform_flags = [
+            "advanced wix studio", "wix studio", "webflow cms", "hostaway", "ghost",
+            "bubble", "shopify app", "wordpress plugin", "woocommerce plugin",
+            "mobile app", "ios app", "android app", "saas mvp", "marketplace app",
+            "marketplace", "complex api"
+        ]
+        non_fit_flags = [
+            "seo only", "seo specialist", "google ads", "facebook ads", "social media manager",
+            "cold calling", "sales role", "lead generation only", "telemarketing"
+        ]
+
+        if any(word in lower for word in service_keywords):
+            score += 15
+            positives.append("Matches website, landing page, redesign, or service-business work.")
+
+        if any(word in lower for word in feature_keywords):
+            score += 15
+            positives.append("Includes a form, calculator, dashboard, booking flow, or interactive feature.")
+
+        if any(word in lower for word in niche_keywords):
+            score += 5
+            positives.append("Niche matches House of Visuals portfolio or target industries.")
+
+        if any(phrase in lower for phrase in ["posted today", "posted 1 hour", "posted 2 hours", "posted 3 hours", "posted 4 hours", "posted 5 hours", "posted minutes", "posted just now"]):
+            score += 10
+            positives.append("Fresh post within roughly 24 hours.")
+        elif "posted yesterday" in lower or re.search(r"posted\s+\d+\s+day", lower):
+            positives.append("Recently posted within the last few days.")
+
+        connects_required = self._extract_first_number_after_label(raw, "Send a proposal for")
+        if connects_required is None:
+            connect_match = re.search(r"([0-9]+)\s+Connects", raw, flags=re.IGNORECASE)
+            connects_required = int(connect_match.group(1)) if connect_match else None
+
+        if connects_required is not None and connects_required >= 15:
+            score -= 10
+            red_flags.append(f"High Connect cost: {connects_required} Connects.")
+
+        proposals_text = ""
+        proposals_count = None
+        prop_match = re.search(r"Proposals:\s*([^\n]+)", raw, flags=re.IGNORECASE)
+        if prop_match:
+            proposals_text = prop_match.group(1).strip()
+            number_match = re.search(r"([0-9]+)", proposals_text)
+            if number_match:
+                proposals_count = int(number_match.group(1))
+
+        if proposals_text:
+            proposals_lower = proposals_text.lower()
+
+            if "50+" in proposals_text or (proposals_count is not None and proposals_count >= 50):
+                score -= 20
+                red_flags.append("Very crowded job: 50+ proposals.")
+            elif "less than 5" in proposals_lower or "fewer than 5" in proposals_lower:
+                score += 8
+                positives.append("Low competition: fewer than 5 proposals.")
+            elif proposals_count is not None and proposals_count < 5:
+                score += 8
+                positives.append("Low competition: fewer than 5 proposals.")
+            elif proposals_count is not None and proposals_count <= 10:
+                score += 5
+                positives.append("Manageable competition: 5–10 proposals.")
+
+        interviews_count = self._extract_first_number_after_label(raw, "Interviewing")
+        if interviews_count is not None:
+            if interviews_count == 0:
+                score += 8
+                positives.append("No interviews yet.")
+            elif interviews_count >= 10:
+                score -= 15
+                red_flags.append(f"Too many interviews already: {interviews_count}.")
+            elif interviews_count <= 1:
+                positives.append("Only 0–1 interviews so far.")
+
+        if "payment method verified" in lower or "payment verified" in lower:
+            score += 5
+            positives.append("Client payment appears verified.")
+
+        money_values = self._extract_money_values(raw)
+        budget = ""
+        if money_values:
+            if len(money_values) >= 2:
+                budget = f"${int(money_values[0]):,}–${int(money_values[1]):,}"
+            else:
+                budget = f"${int(money_values[0]):,}"
+
+            if any(500 <= value <= 2000 for value in money_values):
+                score += 5
+                positives.append("Budget falls in the preferred $500–$2,000 range.")
+
+        if any(phrase in lower for phrase in ["content ready", "assets ready", "copy ready", "i have the content", "figma ready", "design ready", "logo ready"]):
+            score += 5
+            positives.append("Client appears to have content/assets ready.")
+
+        if any(phrase in lower for phrase in ["clear scope", "one-time", "fixed-price", "simple website", "landing page", "contact form"]):
+            score += 5
+            positives.append("Scope appears fairly clear and one-time.")
+
+        if any(flag in lower for flag in platform_flags):
+            score -= 15
+            red_flags.append("Requires platform-specific or complex technical experience that may not fit HOV right now.")
+
+        if any(flag in lower for flag in non_fit_flags):
+            score -= 20
+            red_flags.append("Job appears outside HOV services, such as SEO-only, ads-only, sales, or cold calling.")
+
+        if "50+" in lower and "proposals" in lower:
+            if "Very crowded job: 50+ proposals." not in red_flags:
+                score -= 20
+                red_flags.append("Very crowded job: 50+ proposals.")
+
+        if "already hired" in lower or "hires:" in lower and "1" in lower:
+            score -= 10
+            red_flags.append("Client may have already hired or started with someone.")
+
+        if any(phrase in lower for phrase in ["vague", "not sure what i need", "need someone asap", "do everything", "full ecommerce", "full e-commerce"]):
+            score -= 10
+            red_flags.append("Scope may be vague or larger than it sounds.")
+
+        if any(phrase in lower for phrase in ["full ecommerce", "full e-commerce", "saas", "marketplace", "mobile app"]) and money_values and max(money_values) < 2000:
+            score -= 20
+            red_flags.append("Large build with a low budget.")
+
+        if not any(word in lower for word in service_keywords + feature_keywords):
+            score -= 20
+            red_flags.append("Not clearly related to websites, design, forms, dashboards, calculators, or custom tools.")
+
+        if any(phrase in lower for phrase in ["expert", "expert level"]) and any(flag in lower for flag in platform_flags):
+            score -= 10
+            red_flags.append("Expert-only platform requirement may be too specific.")
+
+        score = max(0, min(100, score))
+        decision = self._upwork_decision_label(score)
+        portfolio = self._portfolio_matches_for_upwork(lower)
+
+        if any(word in lower for word in ["calculator", "quote", "pricing", "dashboard", "crm", "admin"]):
+            timeline = "1–2 weeks depending on fields, logic, and revisions."
+        elif any(word in lower for word in ["ecommerce", "e-commerce", "store", "shop"]):
+            timeline = "2–3 weeks for an ecommerce-lite/product-focused build."
+        elif any(word in lower for word in ["landing page", "one page"]):
+            timeline = "3–5 business days if content/assets are ready."
+        elif any(word in lower for word in ["redesign", "website"]):
+            timeline = "1–2 weeks depending on page count and content readiness."
+        else:
+            timeline = "5–10 business days after scope is confirmed."
+
+        if money_values:
+            max_budget = max(money_values)
+            if score >= 80:
+                suggested_bid = f"Bid around ${int(max(300, min(max_budget, max_budget * 0.9))):,}, depending on final scope."
+            elif score >= 60:
+                suggested_bid = f"Bid carefully around ${int(max(300, min(max_budget, max_budget * 0.75))):,}, or ask scope questions first."
+            else:
+                suggested_bid = "Do not spend Connects unless the client clarifies scope or budget."
+        else:
+            suggested_bid = "Ask for budget first; if aligned, suggest a starter range around $500–$1,500."
+
+        if decision == "Apply":
+            short_reason = "Strong match for House of Visuals based on scope, timing, competition, budget, or portfolio fit."
+        elif decision == "Maybe":
+            short_reason = "Potential fit, but ask clarifying questions before spending too many Connects."
+        else:
+            short_reason = "Likely not worth the Connects based on competition, scope, budget, platform requirements, or fit."
+
+        if not positives:
+            positives.append("Some details may be useful, but the post needs more review.")
+
+        if not red_flags:
+            red_flags.append("No major red flags found from the pasted text.")
+
+        questions = [
+            "Do you already have the logo, copy, images, and brand colors ready?",
+            "How many pages or sections do you need included?",
+            "Do you need this built as a custom HTML/CSS/JS site, or inside a specific platform?",
+            "What is your ideal launch date?",
+        ]
+
+        if any(word in lower for word in ["calculator", "quote", "pricing", "estimate"]):
+            questions.append("Do you already have the pricing rules/formulas for the calculator?")
+
+        if any(word in lower for word in ["booking", "appointment"]):
+            questions.append("Do you want a simple booking request form or integration with a scheduling platform?")
+
+        proposal = f"""Hi! We’re House of Visuals, a husband-wife creative team that builds clean, professional websites, landing pages, forms, quote calculators, dashboards, and custom web tools for small businesses.
+
+Your project stood out because it sounds aligned with the type of practical, conversion-focused web work we build: clear design, responsive layout, strong calls-to-action, and simple tools/forms that help the business operate better.
+
+A few relevant examples we can share include: {", ".join(portfolio)}.
+
+Before giving a final timeline, we’d want to confirm the page count, content/assets, and whether you need a specific platform or a custom build. Based on what you posted, we could likely help with this and keep the process simple.
+
+A few quick questions:
+- Do you already have copy, images, and branding ready?
+- What is your ideal launch date?
+- Are there any forms, booking steps, calculators, or admin features needed?
+
+Thanks!"""
+
+        return {
+            "title": title,
+            "budget": budget or "Not listed",
+            "connects_required": connects_required if connects_required is not None else "Not listed",
+            "proposals": proposals_text or "Not listed",
+            "interviews": interviews_count if interviews_count is not None else "Not listed",
+            "score": score,
+            "decision": decision,
+            "short_reason": short_reason,
+            "positive_signs": positives,
+            "red_flags": red_flags,
+            "suggested_bid": suggested_bid,
+            "suggested_timeline": timeline,
+            "suggested_portfolio": portfolio,
+            "proposal_draft": proposal,
+            "client_questions": questions,
+            "pasted_text": raw,
+        }
+
+    def _analyze_upwork_jobs(self, pasted_text):
+        chunks = self._split_upwork_jobs(pasted_text)
+        return [
+            self._analyze_single_upwork_job(chunk, index + 1)
+            for index, chunk in enumerate(chunks)
+        ]
+
+    def _render_upwork_saved_jobs_table(self):
+        query_params = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+        selected_status = query_params.get("status", [""])[0].strip()
+        selected_decision = query_params.get("decision", [""])[0].strip()
+        selected_sort = query_params.get("sort", ["created_at"])[0].strip() or "created_at"
+
+        saved_jobs = get_upwork_scout_jobs(
+            status_filter=selected_status,
+            decision_filter=selected_decision,
+            sort_by=selected_sort,
+        )
+
+        status_options = "<option value=''>All Statuses</option>" + "".join(
+            f"<option value='{escape(status)}' {'selected' if selected_status == status else ''}>{escape(status)}</option>"
+            for status in DEFAULT_UPWORK_SCOUT_STATUSES
+        )
+
+        decision_options = "<option value=''>All Decisions</option>" + "".join(
+            f"<option value='{escape(decision)}' {'selected' if selected_decision == decision else ''}>{escape(decision)}</option>"
+            for decision in ["Apply", "Maybe", "Skip"]
+        )
+
+        sort_options = "".join(
+            f"<option value='{escape(value)}' {'selected' if selected_sort == value else ''}>{escape(label)}</option>"
+            for value, label in [
+                ("created_at", "Newest First"),
+                ("score", "Highest Score"),
+                ("connects", "Lowest Connects"),
+                ("status", "Status"),
+            ]
+        )
+
+        rows = []
+        for job in saved_jobs:
+            job_link = (
+                f"<a class='btn-small' href='{escape(job.get('job_url') or '', quote=True)}' target='_blank' rel='noopener'>Open Job</a>"
+                if job.get("job_url") else
+                "<span class='mobile-muted'>No link saved</span>"
+            )
+
+            notes_preview = escape((job.get("notes") or "")[:140])
+            if job.get("notes") and len(job.get("notes") or "") > 140:
+                notes_preview += "..."
+
+            rows.append(
+                f"""
+                <tr>
+                  <td>
+                    <strong>{escape(job.get('title') or 'Upwork Job')}</strong>
+                    <span class="mobile-muted">Saved {escape(job.get('created_at') or '')}</span>
+                    <div class="quick-actions">{job_link}</div>
+                  </td>
+                  <td><span class="score-pill">{escape(str(job.get('score') or 0))}/100</span></td>
+                  <td><span class="priority-pill priority-{escape((job.get('decision_label') or 'Maybe').lower())}">{escape(job.get('decision_label') or 'Maybe')}</span></td>
+                  <td>{escape(job.get('status') or 'New')}</td>
+                  <td>
+                    Required: {escape(str(job.get('connects_required') or '-'))}<br>
+                    Spent: {escape(str(job.get('connects_spent') or '-'))}
+                  </td>
+                  <td>{notes_preview or '-'}</td>
+                </tr>
+                """
+            )
+
+        empty_state = """
+            <tr>
+              <td colspan="6">
+                <div class="empty-state">
+                  <h3>No saved Upwork jobs yet.</h3>
+                  <p>Analyze a job above, then use Save Job to add it to this tracker.</p>
+                </div>
+              </td>
+            </tr>
+        """
+
+        return f"""
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Saved Job Tracker</h2>
+                  <p>Track jobs, statuses, Connects, notes, interviews, and wins.</p>
+                </div>
+                <a class="btn-small" href="/admin/upwork-scout">Reset Filters</a>
+              </div>
+
+              <form class="filters" method="get" action="/admin/upwork-scout">
+                <label>Status
+                  <select name="status">{status_options}</select>
+                </label>
+
+                <label>Decision
+                  <select name="decision">{decision_options}</select>
+                </label>
+
+                <label>Sort
+                  <select name="sort">{sort_options}</select>
+                </label>
+
+                <button class="btn" type="submit">Apply Filters</button>
+              </form>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Job</th>
+                      <th>Score</th>
+                      <th>Decision</th>
+                      <th>Status</th>
+                      <th>Connects</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>{''.join(rows) if rows else empty_state}</tbody>
+                </table>
+              </div>
+            </section>
+        """
+
+    def _render_upwork_scout(self, results=None, pasted_text=""):
+        results = results or []
+        pasted_text = pasted_text or ""
+
+        if results:
+            cards = []
+            for index, job in enumerate(results, 1):
+                positives = "".join(f"<li>{escape(item)}</li>" for item in job["positive_signs"])
+                red_flags = "".join(f"<li>{escape(item)}</li>" for item in job["red_flags"])
+                portfolio = "".join(f"<li>{escape(item)}</li>" for item in job["suggested_portfolio"])
+                questions = "".join(f"<li>{escape(item)}</li>" for item in job["client_questions"])
+
+                cards.append(f"""
+                <article class="message-card">
+                  <h3>{escape(job["title"])}</h3>
+                  <p><span class="score-pill">Score: {job["score"]}/100</span> <span class="priority-pill priority-{escape(job["decision"].lower())}">{escape(job["decision"])}</span></p>
+                  <dl class="details">
+                    <dt>Budget</dt><dd>{escape(str(job["budget"]))}</dd>
+                    <dt>Connects</dt><dd>{escape(str(job["connects_required"]))}</dd>
+                    <dt>Proposals</dt><dd>{escape(str(job["proposals"]))}</dd>
+                    <dt>Interviews</dt><dd>{escape(str(job["interviews"]))}</dd>
+                    <dt>Suggested Bid</dt><dd>{escape(job["suggested_bid"])}</dd>
+                    <dt>Timeline</dt><dd>{escape(job["suggested_timeline"])}</dd>
+                  </dl>
+
+                  <h3>Reason</h3>
+                  <p>{escape(job["short_reason"])}</p>
+
+                  <h3>Positive Signs</h3>
+                  <ul>{positives}</ul>
+
+                  <h3>Red Flags</h3>
+                  <ul>{red_flags}</ul>
+
+                  <h3>Best Portfolio Pieces</h3>
+                  <ul>{portfolio}</ul>
+
+                  <h3>Questions to Ask</h3>
+                  <ul>{questions}</ul>
+
+                  <h3>Draft Proposal</h3>
+                  <textarea class="outreach-copy" rows="12" readonly>{escape(job["proposal_draft"])}</textarea>
+
+                  <div class="quick-actions">
+                    <button class="btn-small copy-btn" type="button" data-copy-target="proposal-{index}">Copy Proposal</button>
+                  </div>
+
+                  <form method="post" action="/admin/upwork-scout/save" class="score-checklist">
+                    <h3>Save to Tracker</h3>
+                    <input type="hidden" name="pasted_text" value="{escape(job["pasted_text"], quote=True)}" />
+
+                    <label>Job Link
+                      <input type="url" name="job_url" placeholder="Paste Upwork job link manually, optional" />
+                    </label>
+
+                    <label>Status
+                      <select name="status">
+                        <option value="New">New</option>
+                        <option value="Applied">Applied</option>
+                        <option value="Maybe">Maybe</option>
+                        <option value="Skipped">Skipped</option>
+                        <option value="Interview">Interview</option>
+                        <option value="Hired">Hired</option>
+                        <option value="Lost">Lost</option>
+                      </select>
+                    </label>
+
+                    <label>Connects Spent
+                      <input type="text" name="connects_spent" value="{escape(str(job["connects_required"]), quote=True) if str(job["connects_required"]) != "Not listed" else ""}" placeholder="Example: 8" />
+                    </label>
+
+                    <label>Notes
+                      <textarea name="notes" rows="4" placeholder="Why you saved it, proposal angle, follow-up notes..."></textarea>
+                    </label>
+
+                    <button class="btn" type="submit">Save Job</button>
+                  </form>
+
+                  <textarea id="proposal-{index}" style="position:absolute;left:-9999px;">{escape(job["proposal_draft"])}</textarea>
+                </article>
+                """)
+
+            results_html = f"""
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Analysis Results</h2>
+                  <p>Showing {len(results)} analyzed job(s). This is based only on the text you manually pasted.</p>
+                </div>
+              </div>
+              <div class="message-grid upwork-results-grid">{''.join(cards)}</div>
+            </section>
+            """
+        else:
+            results_html = """
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Analysis Results</h2>
+                  <p>Analyzed jobs will appear here with scores, labels, red flags, portfolio suggestions, and proposal drafts.</p>
+                </div>
+              </div>
+
+              <div class="empty-state">
+                <h3>No jobs analyzed yet.</h3>
+                <p>Paste Upwork text above and click Analyze Jobs.</p>
+              </div>
+            </section>
+            """
+
+        return self._admin_shell(
+            "Upwork Scout",
+            f"""
+            <section class="hero">
+              <p>Manual Upwork Decision Assistant</p>
+              <h1>Upwork Scout</h1>
+              <p>Paste job posts or copied search-result text here. This tool does not log into Upwork, scrape pages, auto-refresh, auto-click, or auto-apply.</p>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Analyze Upwork Jobs</h2>
+                  <p>Use this to quickly decide if a job is worth your Connects.</p>
+                </div>
+              </div>
+
+              <form method="post" action="/admin/upwork-scout/analyze">
+                <label>Paste Upwork job post or search results here
+                  <textarea name="upwork_text" rows="14" placeholder="Paste one full job post or multiple copied job cards from Upwork...">{escape(pasted_text)}</textarea>
+                </label>
+
+                <div class="quick-actions">
+                  <button class="btn" type="submit">Analyze Jobs</button>
+                  <a class="btn-small" href="/admin/upwork-scout">Clear</a>
+                </div>
+              </form>
+            </section>
+
+            {results_html}
+
+            {self._render_upwork_saved_jobs_table()}
+            """,
+        )
+
     def _render_admin_overview(self):
         leads = get_leads()
         prospects = get_prospects()
@@ -2665,6 +3503,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 <a class="btn" href="/admin/leads">View Leads</a>
                 <a class="btn-small" href="/admin/prospects">View Prospects</a>
                 <a class="btn-small" href="/admin/research">Research Helper</a>
+                <a class="btn-small" href="/admin/upwork-scout">Upwork Scout</a>
               </div>
             </section>
 
@@ -2702,6 +3541,11 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 <a class="admin-shortcut" href="/admin/prospects/import">
                   <strong>Import Prospects</strong>
                   <span>Paste CSV data and add multiple prospects into the pipeline faster.</span>
+                </a>
+
+                <a class="admin-shortcut" href="/admin/upwork-scout">
+                  <strong>Upwork Scout</strong>
+                  <span>Paste Upwork job text, analyze fit, and decide whether to apply before spending Connects.</span>
                 </a>
 
                 <a class="admin-shortcut" href="/admin/client-previews">
@@ -3611,6 +4455,12 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 margin: 0 0 0.75rem;
                 color: var(--muted);
               }}
+              .upwork-results-grid {{
+                grid-template-columns: 1fr;
+              }}
+              .upwork-results-grid .message-card {{
+                width: 100%;
+              }}
               .copy-btn {{
                 margin-top: 0.75rem;
                 width: 100%;
@@ -3823,6 +4673,7 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                   <a class="{nav_class('/admin/prospects/new', '/admin/prospects/new/')}" href="/admin/prospects/new">Add Prospect</a>
                   <a class="{nav_class('/admin/prospects/import', '/admin/prospects/import/')}" href="/admin/prospects/import">Import</a>
                   <a class="{nav_class('/admin/research', '/admin/research/')}" href="/admin/research">Research</a>
+                  <a class="{nav_class('/admin/upwork-scout', '/admin/upwork-scout/')}" href="/admin/upwork-scout">Upwork Scout</a>
                   <a class="{nav_class('/admin/client-previews', '/admin/client-previews/')}" href="/admin/client-previews">Client Previews</a>
                   <a class="{nav_class('/admin/completed', '/admin/completed/')}" href="/admin/completed">Completed</a>
                   <a href="/admin/logout">Logout</a>
@@ -4146,6 +4997,64 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
 
     def do_POST(self):
         request_path = self.path.split("?", 1)[0]
+
+        if request_path == "/admin/upwork-scout/save":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", "0"))
+                raw = self.rfile.read(content_length).decode("utf-8", errors="replace")
+                fields = parse_qs(raw, keep_blank_values=True)
+
+                pasted_text = first(fields, "pasted_text")
+                job_url = first(fields, "job_url")
+                status = first(fields, "status") or "New"
+                connects_spent = first(fields, "connects_spent")
+                notes = first(fields, "notes")
+
+                analyzed = self._analyze_single_upwork_job(pasted_text)
+                create_upwork_scout_job(
+                    analyzed,
+                    job_url=job_url,
+                    status=status,
+                    notes=notes,
+                    connects_spent=connects_spent,
+                )
+
+                self.send_response(303)
+                self.send_header("Location", "/admin/upwork-scout?saved=1")
+                self.end_headers()
+            except Exception as error:
+                self._send_html(
+                    self._admin_shell(
+                        "Upwork Scout Save Error",
+                        f"<section class='panel'><h1>Save Error</h1><p>{escape(str(error))}</p><a class='btn-small' href='/admin/upwork-scout'>Back to Upwork Scout</a></section>",
+                    ),
+                    status=400,
+                )
+            return
+
+        if request_path == "/admin/upwork-scout/analyze":
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", "0"))
+                raw = self.rfile.read(content_length).decode("utf-8", errors="replace")
+                fields = parse_qs(raw, keep_blank_values=True)
+                pasted_text = first(fields, "upwork_text")
+                results = self._analyze_upwork_jobs(pasted_text)
+                self._send_html(self._render_upwork_scout(results=results, pasted_text=pasted_text))
+            except Exception as error:
+                self._send_html(
+                    self._admin_shell(
+                        "Upwork Scout Error",
+                        f"<section class='panel'><h1>Upwork Scout Error</h1><p>{escape(str(error))}</p><a class='btn-small' href='/admin/upwork-scout'>Back to Upwork Scout</a></section>",
+                    ),
+                    status=400,
+                )
+            return
 
         if request_path == "/admin/research":
             if not self._admin_allowed():
@@ -4568,6 +5477,13 @@ Glow Beauty Bar,Monica,Salon,Durham NC,,https://instagram.com/glowbeautybar,hell
                 self._send_admin_login_required()
                 return
             self._send_html(self._render_research_helper())
+            return
+
+        if request_path in {"/admin/upwork-scout", "/admin/upwork-scout/"}:
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            self._send_html(self._render_upwork_scout())
             return
 
         if request_path in {"/admin/client-previews", "/admin/client-previews/"}:
