@@ -572,6 +572,16 @@ def create_upwork_scout_job(job, job_url="", status="New", notes="", connects_sp
         return cursor.lastrowid
 
 
+
+def delete_upwork_scout_job(job_id):
+    init_database()
+    with db_connect() as connection:
+        connection.execute(
+            "DELETE FROM upwork_scout_jobs WHERE id = ?",
+            (job_id,),
+        )
+
+
 def update_upwork_scout_job(job_id, status=None, notes=None, connects_spent=None, job_url=None):
     init_database()
 
@@ -3401,6 +3411,14 @@ Thanks!"""
               <textarea id="saved-proposal" class="outreach-copy" rows="14" readonly>{escape(job.get('proposal_draft') or '')}</textarea>
             </section>
 
+            <section class="panel danger-panel">
+              <h2>Delete Saved Job</h2>
+              <p>This permanently removes this saved job from your Upwork Scout tracker. It does not affect anything on Upwork.</p>
+              <form method="post" action="/admin/upwork-scout/{escape(str(job.get('id')))}/delete" onsubmit="return window.confirm('Delete this saved Upwork job? This cannot be undone.');">
+                <button class="btn danger-btn" type="submit">Delete Saved Job</button>
+              </form>
+            </section>
+
             <section class="panel">
               <h2>Original Pasted Job Text</h2>
               <textarea class="outreach-copy" rows="14" readonly>{escape(job.get('pasted_text') or '')}</textarea>
@@ -3542,6 +3560,8 @@ Thanks!"""
             success_message = "Job saved to tracker."
         elif query_params.get("updated", [""])[0] == "1":
             success_message = "Job updated successfully."
+        elif query_params.get("deleted", [""])[0] == "1":
+            success_message = "Job deleted from tracker."
 
         success_html = f"""
             <section class="panel success-panel">
@@ -5298,6 +5318,27 @@ small business website</textarea>
                 ),
                 status=200,
             )
+            return
+
+        if request_path.startswith("/admin/upwork-scout/") and request_path.endswith("/delete"):
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                job_id = int(request_path.rstrip("/").split("/")[-2])
+                delete_upwork_scout_job(job_id)
+
+                self.send_response(303)
+                self.send_header("Location", "/admin/upwork-scout?deleted=1")
+                self.end_headers()
+            except Exception as error:
+                self._send_html(
+                    self._admin_shell(
+                        "Upwork Scout Delete Error",
+                        f"<section class='panel'><h1>Delete Error</h1><p>{escape(str(error))}</p><a class='btn-small' href='/admin/upwork-scout'>Back to Upwork Scout</a></section>",
+                    ),
+                    status=400,
+                )
             return
 
         if request_path.startswith("/admin/upwork-scout/") and request_path.rstrip("/").rsplit("/", 1)[-1].isdigit():
