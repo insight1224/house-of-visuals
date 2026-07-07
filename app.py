@@ -481,6 +481,47 @@ def get_upwork_scout_job(job_id):
         return row_to_upwork_scout_job(row) if row else None
 
 
+
+def find_duplicate_upwork_scout_job(job, job_url=""):
+    init_database()
+
+    title = (job.get("title") or "Upwork Job").strip()
+    pasted_text = (job.get("pasted_text") or "").strip()
+    job_url = (job_url or "").strip()
+
+    with db_connect() as connection:
+        if job_url:
+            existing = connection.execute(
+                """
+                SELECT *
+                FROM upwork_scout_jobs
+                WHERE job_url = ?
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (job_url,),
+            ).fetchone()
+            if existing:
+                return row_to_upwork_scout_job(existing)
+
+        if title and pasted_text:
+            existing = connection.execute(
+                """
+                SELECT *
+                FROM upwork_scout_jobs
+                WHERE title = ?
+                  AND pasted_text = ?
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (title, pasted_text),
+            ).fetchone()
+            if existing:
+                return row_to_upwork_scout_job(existing)
+
+    return None
+
+
 def create_upwork_scout_job(job, job_url="", status="New", notes="", connects_spent=""):
     init_database()
 
@@ -3227,11 +3268,20 @@ Thanks!"""
             return
 
         query_params = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
-        success_message = "Job updated successfully." if query_params.get("updated", [""])[0] == "1" else ""
+        success_message = ""
+        success_detail = ""
+
+        if query_params.get("updated", [""])[0] == "1":
+            success_message = "Job updated successfully."
+            success_detail = "Your changes were saved."
+        elif query_params.get("duplicate", [""])[0] == "1":
+            success_message = "This job is already saved."
+            success_detail = "Upwork Scout found an existing tracker entry instead of creating a duplicate."
+
         success_html = f"""
             <section class="panel success-panel">
               <h2>{escape(success_message)}</h2>
-              <p>Your changes were saved.</p>
+              <p>{escape(success_detail)}</p>
             </section>
         """ if success_message else ""
 
@@ -5297,6 +5347,14 @@ small business website</textarea>
                 notes = first(fields, "notes")
 
                 analyzed = self._analyze_single_upwork_job(pasted_text)
+                duplicate = find_duplicate_upwork_scout_job(analyzed, job_url=job_url)
+
+                if duplicate:
+                    self.send_response(303)
+                    self.send_header("Location", f"/admin/upwork-scout/{duplicate['id']}?duplicate=1")
+                    self.end_headers()
+                    return
+
                 create_upwork_scout_job(
                     analyzed,
                     job_url=job_url,
