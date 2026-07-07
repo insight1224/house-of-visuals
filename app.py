@@ -466,6 +466,21 @@ def get_upwork_scout_jobs(status_filter="", decision_filter="", sort_by="created
         return [row_to_upwork_scout_job(row) for row in rows]
 
 
+
+def get_upwork_scout_job(job_id):
+    init_database()
+    with db_connect() as connection:
+        row = connection.execute(
+            """
+            SELECT *
+            FROM upwork_scout_jobs
+            WHERE id = ?
+            """,
+            (job_id,),
+        ).fetchone()
+        return row_to_upwork_scout_job(row) if row else None
+
+
 def create_upwork_scout_job(job, job_url="", status="New", notes="", connects_spent=""):
     init_database()
 
@@ -3198,6 +3213,143 @@ Thanks!"""
             for index, chunk in enumerate(chunks)
         ]
 
+    def _render_upwork_scout_detail(self, job_id):
+        job = get_upwork_scout_job(job_id)
+
+        if not job:
+            self._send_html(
+                self._admin_shell(
+                    "Upwork Scout Job Not Found",
+                    "<section class='panel'><h1>Job not found.</h1><a class='btn-small' href='/admin/upwork-scout'>Back to Upwork Scout</a></section>",
+                ),
+                status=404,
+            )
+            return
+
+        status_options = "".join(
+            f"<option value='{escape(status)}' {'selected' if status == (job.get('status') or 'New') else ''}>{escape(status)}</option>"
+            for status in DEFAULT_UPWORK_SCOUT_STATUSES
+        )
+
+        positives = "".join(f"<li>{escape(item)}</li>" for item in job.get("positive_signs") or [])
+        red_flags = "".join(f"<li>{escape(item)}</li>" for item in job.get("red_flags") or [])
+        portfolio = "".join(f"<li>{escape(item)}</li>" for item in job.get("suggested_portfolio") or [])
+        questions = "".join(f"<li>{escape(item)}</li>" for item in job.get("client_questions") or [])
+
+        job_link_button = (
+            f"<a class='btn-small' href='{escape(job.get('job_url') or '', quote=True)}' target='_blank' rel='noopener'>Open Upwork Job</a>"
+            if job.get("job_url") else
+            ""
+        )
+
+        html = self._admin_shell(
+            f"Upwork Scout Job #{job.get('id')}",
+            f"""
+            <section class="hero detail-hero">
+              <p><a href="/admin/upwork-scout">← Back to Upwork Scout</a></p>
+              <h1>{escape(job.get('title') or 'Upwork Job')}</h1>
+              <p>
+                <span class="score-pill">Score: {escape(str(job.get('score') or 0))}/100</span>
+                <span class="priority-pill priority-{escape((job.get('decision_label') or 'Maybe').lower())}">{escape(job.get('decision_label') or 'Maybe')}</span>
+              </p>
+              <div class="quick-actions">
+                {job_link_button}
+              </div>
+            </section>
+
+            <section class="detail-grid">
+              <article class="panel">
+                <h2>Job Snapshot</h2>
+                <dl class="details">
+                  <dt>Budget</dt><dd>{escape(job.get('budget') or '-')}</dd>
+                  <dt>Connects Required</dt><dd>{escape(str(job.get('connects_required') or '-'))}</dd>
+                  <dt>Proposals</dt><dd>{escape(str(job.get('proposals_count') or '-'))}</dd>
+                  <dt>Interviews</dt><dd>{escape(str(job.get('interviews_count')) if job.get('interviews_count') not in [None, ''] else '-')}</dd>
+                  <dt>Status</dt><dd>{escape(job.get('status') or 'New')}</dd>
+                  <dt>Connects Spent</dt><dd>{escape(str(job.get('connects_spent') or '-'))}</dd>
+                  <dt>Saved</dt><dd>{escape(job.get('created_at') or '-')}</dd>
+                  <dt>Updated</dt><dd>{escape(job.get('updated_at') or '-')}</dd>
+                </dl>
+              </article>
+
+              <article class="panel">
+                <h2>Update Job</h2>
+                <form method="post" action="/admin/upwork-scout/{escape(str(job.get('id')))}">
+                  <label>Status
+                    <select name="status">{status_options}</select>
+                  </label>
+
+                  <label>Job Link
+                    <input type="url" name="job_url" value="{escape(job.get('job_url') or '', quote=True)}" placeholder="Paste Upwork job link" />
+                  </label>
+
+                  <label>Connects Spent
+                    <input type="text" name="connects_spent" value="{escape(str(job.get('connects_spent') or ''), quote=True)}" placeholder="Example: 8" />
+                  </label>
+
+                  <label>Notes
+                    <textarea name="notes" rows="8">{escape(job.get('notes') or '')}</textarea>
+                  </label>
+
+                  <button class="btn" type="submit">Save Changes</button>
+                </form>
+              </article>
+            </section>
+
+            <section class="panel">
+              <h2>Recommendation</h2>
+              <p>{escape(job.get('short_reason') or '')}</p>
+              <dl class="details">
+                <dt>Suggested Bid</dt><dd>{escape(job.get('suggested_bid') or '-')}</dd>
+                <dt>Suggested Timeline</dt><dd>{escape(job.get('suggested_timeline') or '-')}</dd>
+              </dl>
+            </section>
+
+            <section class="detail-grid">
+              <article class="panel">
+                <h2>Positive Signs</h2>
+                <ul>{positives or '<li>No positive signs saved.</li>'}</ul>
+              </article>
+
+              <article class="panel">
+                <h2>Red Flags</h2>
+                <ul>{red_flags or '<li>No red flags saved.</li>'}</ul>
+              </article>
+            </section>
+
+            <section class="detail-grid">
+              <article class="panel">
+                <h2>Best Portfolio Pieces</h2>
+                <ul>{portfolio or '<li>No portfolio suggestions saved.</li>'}</ul>
+              </article>
+
+              <article class="panel">
+                <h2>Questions to Ask Client</h2>
+                <ul>{questions or '<li>No questions saved.</li>'}</ul>
+              </article>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Draft Proposal</h2>
+                  <p>Review and copy into Upwork manually.</p>
+                </div>
+                <button class="btn-small copy-btn" type="button" data-copy-target="saved-proposal">Copy Proposal</button>
+              </div>
+              <textarea id="saved-proposal" class="outreach-copy" rows="14" readonly>{escape(job.get('proposal_draft') or '')}</textarea>
+            </section>
+
+            <section class="panel">
+              <h2>Original Pasted Job Text</h2>
+              <textarea class="outreach-copy" rows="14" readonly>{escape(job.get('pasted_text') or '')}</textarea>
+            </section>
+            """,
+        )
+
+        self._send_html(html)
+
+
     def _render_upwork_saved_jobs_table(self):
         query_params = parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
         selected_status = query_params.get("status", [""])[0].strip()
@@ -3258,13 +3410,14 @@ Thanks!"""
                     Spent: {escape(str(job.get('connects_spent') or '-'))}
                   </td>
                   <td>{notes_preview or '-'}</td>
+                  <td><a class="btn-small" href="/admin/upwork-scout/{escape(str(job.get('id') or ''))}">View Details</a></td>
                 </tr>
                 """
             )
 
         empty_state = """
             <tr>
-              <td colspan="6">
+              <td colspan="7">
                 <div class="empty-state">
                   <h3>No saved Upwork jobs yet.</h3>
                   <p>Analyze a job above, then use Save Job to add it to this tracker.</p>
@@ -3309,6 +3462,7 @@ Thanks!"""
                       <th>Status</th>
                       <th>Connects</th>
                       <th>Notes</th>
+                      <th>Details</th>
                     </tr>
                   </thead>
                   <tbody>{''.join(rows) if rows else empty_state}</tbody>
@@ -4998,6 +5152,37 @@ Thanks!"""
     def do_POST(self):
         request_path = self.path.split("?", 1)[0]
 
+        if request_path.startswith("/admin/upwork-scout/") and request_path.rstrip("/").rsplit("/", 1)[-1].isdigit():
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            try:
+                job_id = int(request_path.rstrip("/").rsplit("/", 1)[-1])
+                content_length = int(self.headers.get("Content-Length", "0"))
+                raw = self.rfile.read(content_length).decode("utf-8", errors="replace")
+                fields = parse_qs(raw, keep_blank_values=True)
+
+                update_upwork_scout_job(
+                    job_id,
+                    status=first(fields, "status") or "New",
+                    notes=first(fields, "notes"),
+                    connects_spent=first(fields, "connects_spent"),
+                    job_url=first(fields, "job_url"),
+                )
+
+                self.send_response(303)
+                self.send_header("Location", f"/admin/upwork-scout/{job_id}?updated=1")
+                self.end_headers()
+            except Exception as error:
+                self._send_html(
+                    self._admin_shell(
+                        "Upwork Scout Update Error",
+                        f"<section class='panel'><h1>Update Error</h1><p>{escape(str(error))}</p><a class='btn-small' href='/admin/upwork-scout'>Back to Upwork Scout</a></section>",
+                    ),
+                    status=400,
+                )
+            return
+
         if request_path == "/admin/upwork-scout/save":
             if not self._admin_allowed():
                 self._send_admin_login_required()
@@ -5484,6 +5669,14 @@ Thanks!"""
                 self._send_admin_login_required()
                 return
             self._send_html(self._render_upwork_scout())
+            return
+
+        if request_path.startswith("/admin/upwork-scout/") and request_path.rstrip("/").rsplit("/", 1)[-1].isdigit():
+            if not self._admin_allowed():
+                self._send_admin_login_required()
+                return
+            job_id = int(request_path.rstrip("/").rsplit("/", 1)[-1])
+            self._render_upwork_scout_detail(job_id)
             return
 
         if request_path in {"/admin/client-previews", "/admin/client-previews/"}:
