@@ -218,27 +218,25 @@
 .home-care-card {
   margin-top: 1.15rem;
   padding: 1.2rem 1.35rem;
-  border: 1px solid rgba(201, 162, 79, 0.32);
+  border: 1px solid rgba(31, 122, 87, 0.22);
   border-radius: 16px;
-  background:
-    linear-gradient(145deg, rgba(12, 17, 14, 0.94), rgba(6, 9, 7, 0.96)),
-    radial-gradient(circle at 15% 20%, rgba(201, 162, 79, 0.2), transparent 34%);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 246, 0.98));
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 1rem 1.5rem;
   align-items: center;
-  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
 }
 
 .home-care-copy h3 {
   font-family: "Cinzel", serif;
-  color: #f6f0df;
+  color: #111f17;
   font-size: 1.25rem;
   margin: 0 0 0.25rem;
 }
 
 .home-care-price {
-  color: #e4c98c;
+  color: #163124;
   font-family: "Cinzel", serif;
   font-size: 1.15rem;
   font-weight: 600;
@@ -246,7 +244,7 @@
 }
 
 .home-care-copy p:not(.home-care-price) {
-  color: #d5ddd6;
+  color: #2f4036;
   font-size: 0.92rem;
   line-height: 1.55;
   max-width: 72ch;

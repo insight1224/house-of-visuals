@@ -683,24 +683,6 @@ function formatParamsForEmail(params) {
   return [...params.entries()].map(([key, value]) => `${key.replace(/\[\]$/, "")}: ${value}`).join("\n");
 }
 
-async function postToLocalEmailApi(endpoint, params) {
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-    body: params.toString(),
-  });
-  const result = await response.json().catch(() => ({
-    ok: false,
-    message: "The email service is not available from this server."
-  }));
-
-  if (!response.ok || !result.ok) {
-    throw new Error(result.message || "The email service is not available from this server.");
-  }
-
-  return result;
-}
-
 async function postToFormSubmit(params, subject) {
   const fallbackParams = new URLSearchParams(params);
   fallbackParams.set("_subject", subject);
@@ -726,14 +708,6 @@ async function postToFormSubmit(params, subject) {
   }
 
   return result;
-}
-
-async function sendWebsiteEmail(endpoint, params, subject) {
-  try {
-    return await postToLocalEmailApi(endpoint, params);
-  } catch (apiError) {
-    return postToFormSubmit(params, subject);
-  }
 }
 
 function toggleReferralField() {
@@ -796,11 +770,21 @@ if (contactForm) {
         params.append(key, value);
       }
 
-      fallbackMailto = `mailto:${businessEmail}?subject=${encodeURIComponent("New House of Visuals Inquiry")}&body=${encodeURIComponent(
+      fallbackMailto = `mailto:${businessEmail}?subject=${encodeURIComponent("New House of Visuals Co. inquiry")}&body=${encodeURIComponent(
         formatParamsForEmail(params)
       )}`;
 
-      const result = await sendWebsiteEmail("/api/inquiry", params, "New House of Visuals Inquiry");
+      if ((params.get("_honey") || "").trim()) {
+        if (formSuccess) {
+          formSuccess.hidden = false;
+          formSuccess.textContent = "Thank you! Your inquiry has been received. We’ll review your details and follow up soon.";
+        }
+        contactForm.reset();
+        toggleReferralField();
+        return;
+      }
+
+      const result = await postToFormSubmit(params, "New House of Visuals Co. inquiry");
 
       if (formSuccess) {
         formSuccess.hidden = false;
@@ -862,11 +846,20 @@ if (testimonialForm) {
         params.append(key, value);
       }
 
-      fallbackMailto = `mailto:${businessEmail}?subject=${encodeURIComponent("New House of Visuals Testimonial")}&body=${encodeURIComponent(
+      fallbackMailto = `mailto:${businessEmail}?subject=${encodeURIComponent("New House of Visuals Co. testimonial")}&body=${encodeURIComponent(
         formatParamsForEmail(params)
       )}`;
 
-      const result = await sendWebsiteEmail("/api/testimonial", params, "New House of Visuals Testimonial");
+      if ((params.get("_honey") || "").trim()) {
+        if (testimonialSuccess) {
+          testimonialSuccess.hidden = false;
+          testimonialSuccess.textContent = "Thank you for sharing your experience. We’ll review your testimonial before publishing.";
+        }
+        testimonialForm.reset();
+        return;
+      }
+
+      const result = await postToFormSubmit(params, "New House of Visuals Co. testimonial");
 
       if (testimonialSuccess) {
         testimonialSuccess.hidden = false;
