@@ -1,0 +1,321 @@
+/* House of Visuals — Website Packages section
+   Matches homepage typography (Cinzel + Manrope), gold/green palette,
+   16px cards, and the light launch-trust treatment. */
+
+.home-packages {
+  position: relative;
+  z-index: 2;
+  scroll-margin-top: 96px;
+  padding-top: 4.25rem;
+  padding-bottom: 4.5rem;
+  background:
+    radial-gradient(circle at 88% 8%, rgba(31, 122, 87, 0.08), transparent 36%),
+    radial-gradient(circle at 8% 92%, rgba(201, 162, 79, 0.1), transparent 32%),
+    #f7faf7;
+  border-top: 1px solid rgba(31, 122, 87, 0.1);
+  border-bottom: 1px solid rgba(31, 122, 87, 0.1);
+}
+
+.home-packages .home-packages-kicker,
+.home-packages .kicker {
+  color: #1f7a57;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  margin-bottom: 0.7rem;
+}
+
+.home-packages .section-title {
+  color: #111f17;
+  max-width: 18ch;
+}
+
+.home-packages .gold-line {
+  background: linear-gradient(90deg, #c7921f, transparent);
+}
+
+.home-packages-intro {
+  max-width: 720px;
+  color: #2f3f35;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  margin: -0.6rem 0 2rem;
+}
+
+.home-packages-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.1rem;
+  align-items: stretch;
+}
+
+.home-package-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(31, 122, 87, 0.22);
+  border-radius: 16px;
+  padding: 1.45rem 1.25rem 1.3rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(247, 251, 248, 0.98)),
+    radial-gradient(circle at 12% 10%, rgba(201, 162, 79, 0.16), transparent 36%);
+  box-shadow: 0 14px 24px rgba(13, 32, 23, 0.08);
+  transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s;
+}
+
+.home-package-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(201, 162, 79, 0.5);
+  box-shadow: 0 18px 30px rgba(13, 32, 23, 0.12);
+}
+
+.home-package-card.is-popular {
+  border: 1.5px solid rgba(201, 162, 79, 0.72);
+  background:
+    linear-gradient(165deg, rgba(255, 252, 245, 0.99), rgba(247, 251, 248, 0.98)),
+    radial-gradient(circle at 80% 0%, rgba(201, 162, 79, 0.22), transparent 42%);
+  box-shadow:
+    0 18px 36px rgba(13, 32, 23, 0.12),
+    0 0 0 4px rgba(201, 162, 79, 0.12);
+  transform: translateY(-6px);
+}
+
+.home-package-card.is-popular:hover {
+  transform: translateY(-8px);
+}
+
+.home-package-badge {
+  position: absolute;
+  top: -0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.32rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 162, 79, 0.55);
+  background: linear-gradient(135deg, #9f7a30, #c9a24f);
+  color: #16130b;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 8px 16px rgba(201, 162, 79, 0.28);
+}
+
+.home-package-label {
+  color: #c7921f;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0.15rem 0 0.45rem;
+}
+
+.home-package-card h3 {
+  font-family: "Cinzel", serif;
+  font-size: 1.45rem;
+  color: #111f17;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.home-package-price {
+  margin: 0.7rem 0 0.35rem;
+  color: #163124;
+  font-family: "Cinzel", serif;
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+
+.home-package-turnaround {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin: 0.15rem 0 0.85rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 122, 87, 0.28);
+  background: rgba(31, 122, 87, 0.08);
+  color: #1b4b35;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.home-package-blurb {
+  color: #35483d;
+  font-size: 0.94rem;
+  line-height: 1.58;
+  margin: 0 0 1rem;
+}
+
+.home-package-features {
+  list-style: none;
+  margin: 0 0 1.35rem;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+  flex: 1;
+}
+
+.home-package-features li {
+  position: relative;
+  padding-left: 1.35rem;
+  color: #2f3f35;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.home-package-features li::before {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  top: 0.05rem;
+  color: #c9a24f;
+  font-size: 0.72rem;
+}
+
+.home-package-example {
+  margin: -0.45rem 0 1.2rem;
+  color: #2f3f35;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.home-package-example a {
+  color: #1f7a57;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.home-package-example a:hover {
+  color: #c7921f;
+}
+
+.home-package-card .btn {
+  width: 100%;
+  margin-top: auto;
+}
+
+.home-package-card .btn-outline {
+  border-color: #1f7a57;
+  color: #0f2d20;
+  background: #eaf6ef;
+  box-shadow: 0 8px 18px rgba(31, 122, 87, 0.12);
+}
+
+.home-package-card .btn-outline:hover {
+  background: #1f7a57;
+  color: #ffffff;
+  border-color: #1f7a57;
+}
+
+.home-care-card {
+  margin-top: 1.15rem;
+  padding: 1.2rem 1.35rem;
+  border: 1px solid rgba(201, 162, 79, 0.32);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(12, 17, 14, 0.94), rgba(6, 9, 7, 0.96)),
+    radial-gradient(circle at 15% 20%, rgba(201, 162, 79, 0.2), transparent 34%);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem 1.5rem;
+  align-items: center;
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.22);
+}
+
+.home-care-copy h3 {
+  font-family: "Cinzel", serif;
+  color: #f6f0df;
+  font-size: 1.25rem;
+  margin: 0 0 0.25rem;
+}
+
+.home-care-price {
+  color: #e4c98c;
+  font-family: "Cinzel", serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 0.65rem;
+}
+
+.home-care-copy p:not(.home-care-price) {
+  color: #d5ddd6;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  max-width: 72ch;
+  margin: 0;
+}
+
+.home-care-card .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  justify-self: end;
+  align-self: center;
+}
+
+.home-packages-terms {
+  margin-top: 1.15rem;
+  color: #2f3f35;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.home-packages-terms strong {
+  color: #163124;
+  font-weight: 700;
+}
+
+@media (max-width: 1024px) {
+  .home-packages-grid {
+    grid-template-columns: 1fr;
+    max-width: 520px;
+  }
+
+  .home-package-card.is-popular {
+    transform: none;
+    order: -1;
+  }
+
+  .home-package-card.is-popular:hover {
+    transform: translateY(-4px);
+  }
+
+  .home-care-card {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+
+  .home-care-card .btn {
+    width: 100%;
+    justify-self: stretch;
+  }
+}
+
+@media (max-width: 760px) {
+  .home-packages {
+    padding-top: 3.2rem;
+    padding-bottom: 3.4rem;
+  }
+
+  .home-packages .section-title {
+    max-width: none;
+    font-size: clamp(1.7rem, 8vw, 2.4rem);
+  }
+
+  .home-package-card,
+  .home-care-card {
+    padding: 1.25rem 1.1rem;
+  }
+
+  .home-packages-terms {
+    text-align: left;
+  }
+}
